@@ -1,0 +1,1337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spelling">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#16342a">
+<link rel="apple-touch-icon" href="spelling-icon.png">
+<link rel="icon" href="spelling-icon.png">
+<title>Spelling Chalkboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  :root {
+    --board-top: #16342a;
+    --board-bottom: #0e241c;
+    --rail: #0a1d16;
+    --chalk: #f6f0e2;
+    --chalk-dim: #cfe3d6;
+    --chalk-faint: #8fac9c;
+    --ink: #17302a;
+    --ink-soft: #4a6259;
+    --gold: #e7b64c;
+    --gold-ink: #4a3410;
+    --good: #3f9d63;
+    --good-bg: #e5f4e9;
+    --bad: #d1584c;
+    --bad-bg: #fbe8e5;
+    --line: #d9d0bb;
+    --font-display: 'Caveat', 'Segoe Script', cursive;
+    --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-body);
+    color: var(--chalk);
+    background:
+      radial-gradient(circle at 18% 24%, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 1.6px),
+      radial-gradient(circle at 68% 78%, rgba(255,255,255,0.035) 0, rgba(255,255,255,0.035) 1px, transparent 1.6px),
+      radial-gradient(circle at 40% 55%, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1.6px),
+      linear-gradient(165deg, var(--board-top), var(--board-bottom));
+    background-size: 46px 46px, 63px 63px, 38px 38px, 100% 100%;
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px 56px;
+  }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .wrap { width: 100%; max-width: 460px; }
+
+  .brand { text-align: center; margin-bottom: 22px; }
+  .brand h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin: 0;
+    color: var(--chalk);
+    letter-spacing: 0.01em;
+    text-shadow: 0 0 1px rgba(255,255,255,0.25), 0 2px 0 rgba(0,0,0,0.15);
+  }
+  .brand .rule {
+    width: 96px;
+    height: 3px;
+    margin: 6px auto 10px;
+    border-radius: 3px;
+    background: var(--gold);
+    opacity: 0.85;
+  }
+  .brand p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--chalk-dim);
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .backlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--chalk-dim);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 0 14px;
+  }
+  .backlink:hover { color: var(--gold); }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--chalk);
+    margin: 0 0 2px;
+  }
+  .section-sub {
+    font-size: 0.88rem;
+    color: var(--chalk-dim);
+    margin: 0 0 18px;
+  }
+
+  /* --- Picker cards --- */
+  .picker-grid { display: flex; flex-direction: column; gap: 14px; }
+  .board-card {
+    position: relative;
+    background: var(--chalk);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 16px 20px;
+    text-align: left;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.04) inset;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transform: rotate(var(--tilt, 0deg));
+  }
+  .board-card:nth-child(odd) { --tilt: -0.6deg; }
+  .board-card:nth-child(even) { --tilt: 0.5deg; }
+  .board-card::before {
+    content: "";
+    position: absolute;
+    top: -8px; left: 22px;
+    width: 34px; height: 14px;
+    background: rgba(231,182,76,0.55);
+    border: 1px solid rgba(231,182,76,0.7);
+    transform: rotate(-3deg);
+  }
+  .board-card .emoji { font-size: 1.7rem; line-height: 1; }
+  .board-card .titles { flex: 1; min-width: 0; }
+  .board-card .t1 { font-size: 1.1rem; font-weight: 800; }
+  .board-card .t2 { font-size: 0.8rem; color: var(--ink-soft); margin-top: 3px; }
+  .board-card .arrow { color: var(--ink-soft); font-size: 1.3rem; }
+
+  /* --- Tabs --- */
+  .tabs {
+    display: flex;
+    gap: 22px;
+    border-bottom: 1px dashed rgba(255,255,255,0.22);
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--chalk-faint);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 6px 2px 12px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-btn.active {
+    color: var(--chalk);
+    border-bottom-color: var(--gold);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: var(--chalk);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.3);
+  }
+
+  .progress-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--gold);
+    background: rgba(231,182,76,0.12);
+    border: 1px solid rgba(231,182,76,0.35);
+    border-radius: 999px;
+    padding: 4px 11px;
+    margin-bottom: 18px;
+  }
+  .sync-note { font-size: 0.72rem; color: var(--chalk-faint); margin: -12px 0 18px; }
+
+  /* --- Overall progress (partial credit toward mastery, not just the
+     binary mastered/not-yet count) --- */
+  .overall-progress { margin: -8px 0 18px; }
+  .overall-progress-label {
+    font-size: 0.78rem;
+    color: var(--chalk-dim);
+    margin-bottom: 5px;
+  }
+  .overall-progress-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.14);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .overall-progress-fill {
+    height: 100%;
+    background: var(--good);
+    transition: width 0.3s;
+  }
+
+  .prompt-progress {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin: -6px 0 12px;
+  }
+
+  /* --- Setup fields --- */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-weight: 800;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+  .opt-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .opt-row button {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: 2px solid var(--line);
+    background: #fffdf8;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .opt-row button.selected {
+    border-color: var(--good);
+    background: var(--good-bg);
+    color: #205c37;
+  }
+  .opt-row button:disabled { opacity: 0.45; cursor: default; }
+
+  .voice-row { display: flex; gap: 8px; align-items: center; }
+  .voice-row select {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: 2px solid var(--line);
+    background: #fffdf8;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .voice-row button {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--line);
+    background: #fffdf8;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .primary-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 9px;
+    border: none;
+    background: var(--gold);
+    color: var(--gold-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .primary-btn:active { transform: scale(0.98); }
+  .secondary-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 9px;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  /* --- Flashcards (Study) --- */
+  .flash-progress {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--chalk-dim);
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .flashcard {
+    background: var(--chalk);
+    color: var(--ink);
+    border-radius: 10px;
+    min-height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    cursor: pointer;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.3);
+    user-select: none;
+  }
+  .flashcard .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .flashcard .sentence {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.2rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .flashcard .sentence b { color: #205c37; text-decoration: underline; text-decoration-color: var(--good); text-decoration-thickness: 3px; }
+  .flashcard .hint {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-top: 12px;
+  }
+  .flashcard .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-top: 10px;
+  }
+  .status-mastered { background: var(--good-bg); color: #205c37; }
+  .status-learning { background: rgba(231,182,76,0.18); color: #7a5a10; }
+  .status-practice { background: var(--bad-bg); color: #8f2e24; }
+
+  .flash-nav {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .flash-nav button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 9px;
+    border: 1px dashed rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.06);
+    color: var(--chalk);
+    font-family: var(--font-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* --- Quiz play --- */
+  .quiz-progress {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--chalk-dim);
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.14);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.2s;
+  }
+  .prompt-label {
+    text-align: center;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-weight: 800;
+  }
+  .prompt-sentence {
+    font-weight: 700;
+    font-size: 1.2rem;
+    line-height: 1.45;
+    text-align: center;
+    margin: 4px 0 16px;
+    text-wrap: balance;
+  }
+  .speak-row { display: flex; justify-content: center; margin-bottom: 14px; }
+  .speak-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 2px solid var(--line);
+    background: #fffdf8;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .speak-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .type-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .type-row input {
+    flex: 1;
+    padding: 13px;
+    border-radius: 9px;
+    border: 2px solid var(--line);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    background: #fffdf8;
+    color: var(--ink);
+  }
+  .type-row input.correct { border-color: var(--good); background: var(--good-bg); }
+  .type-row input.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .feedback {
+    font-size: 0.9rem;
+    font-weight: 700;
+    min-height: 22px;
+    margin-bottom: 6px;
+  }
+  .feedback.good { color: #205c37; }
+  .feedback.bad { color: #8f2e24; }
+
+  /* --- Results --- */
+  .score-big {
+    font-family: var(--font-body);
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 4px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-sub {
+    text-align: center;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+  }
+  .score-progress {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #205c37;
+    margin-bottom: 18px;
+  }
+  .review-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+  }
+  .review-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.92rem;
+  }
+  .review-list b { color: #8f5b12; white-space: nowrap; }
+  .review-list span { text-align: right; color: var(--ink-soft); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <h1>Spelling Chalkboard</h1>
+    <div class="rule"></div>
+    <p>Michaelmas 2026 spelling lists</p>
+  </div>
+
+  <!-- SCREEN 1: WEEK PICKER -->
+  <div class="screen active" id="screen-week">
+    <div class="section-title">Spelling</div>
+    <p class="section-sub">Pick a week to practice</p>
+    <div class="picker-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- SCREEN 2: MAIN TRAINER -->
+  <div class="screen" id="screen-main">
+    <button class="backlink" id="backToWeek">&larr; Change week</button>
+    <div class="section-title" id="mainTitle">Week 1</div>
+    <p class="section-sub" id="mainSubtitle">Test w/c ...</p>
+    <div class="progress-chip hidden" id="masteryChip">0 / 0 mastered</div>
+    <div class="overall-progress hidden" id="overallProgress">
+      <div class="overall-progress-label" id="overallProgressLabel">0 / 0 correct-in-a-row credits earned</div>
+      <div class="overall-progress-bar"><div class="overall-progress-fill" id="overallProgressFill" style="width:0%"></div></div>
+    </div>
+    <p class="sync-note" id="syncNote"></p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="flash">Study</button>
+      <button class="tab-btn" data-tab="quiz">Spelling Test</button>
+    </div>
+
+    <!-- STUDY (FLASHCARDS) -->
+    <div class="panel active" id="panel-flash">
+      <div class="flash-progress" id="flashProgress">1 / 13</div>
+      <div class="flashcard" id="flashcard">
+        <div>
+          <div class="eyebrow hidden" id="flashGroup">Group</div>
+          <div class="sentence" id="flashSentence">sentence</div>
+          <div class="hint" id="flashHint">tap to reveal the word</div>
+          <div class="status hidden" id="flashStatus">new</div>
+        </div>
+      </div>
+      <div class="flash-nav">
+        <button id="flashPrev">&larr; Prev</button>
+        <button id="flashShuffle">Shuffle</button>
+        <button id="flashNext">Next &rarr;</button>
+      </div>
+    </div>
+
+    <!-- SPELLING TEST SETUP / PLAY / RESULTS -->
+    <div class="panel" id="panel-quiz">
+
+      <div class="card" id="quizSetup">
+        <div class="field">
+          <label id="setFieldLabel">Words</label>
+          <div class="opt-row" id="setRow">
+            <button data-val="all" class="selected">All words</button>
+            <button data-val="practice" id="practiceOnlyBtn" disabled>Needs practice (0)</button>
+          </div>
+        </div>
+        <div class="field hidden" id="voiceField">
+          <label>Voice</label>
+          <div class="voice-row">
+            <select id="voiceSelect"></select>
+            <button type="button" id="voiceTestBtn" title="Hear a sample word">&#9654;</button>
+          </div>
+        </div>
+        <button class="primary-btn" id="startQuizBtn">Start spelling test</button>
+      </div>
+
+      <div id="quizPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="quizCounter">Question 1 / 13</span>
+          <span id="quizScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label" id="promptLabel">Fill in the missing word</div>
+          <div class="prompt-sentence" id="promptSentence">sentence with a _____ in it</div>
+          <div class="prompt-progress hidden" id="promptProgress"></div>
+          <div class="speak-row">
+            <button class="speak-btn" id="speakBtn">&#128266; Hear it</button>
+          </div>
+          <form id="typeForm" autocomplete="off" action="javascript:void(0);">
+            <div class="type-row">
+              <input type="text" id="typeInput" name="spelling-answer" placeholder="Type the word" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
+            </div>
+          </form>
+          <button class="primary-btn" id="typeSubmit">Check</button>
+          <div class="feedback" id="feedback"></div>
+          <button class="primary-btn hidden" id="nextBtn">Next &rarr;</button>
+        </div>
+      </div>
+
+      <div id="quizResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="resultScore">0 / 13</div>
+          <div class="score-sub" id="resultMsg">Nice work!</div>
+          <div class="score-progress" id="resultProgress"></div>
+          <div id="resultReviewWrap">
+            <label style="font-weight:800; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);">Review your misses</label>
+            <ul class="review-list" id="reviewList"></ul>
+          </div>
+          <button class="primary-btn" id="retryPracticeBtn">Practice words that need it</button>
+          <button class="secondary-btn" id="restartAllBtn">Start over (all words)</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ================= DATA =================
+// Every taught word lives once in WORD_BANK, keyed by its exact spelling,
+// with a short sentence that (a) gives a fill-the-blank cue and (b) — for
+// near-homophones like allowed/aloud or affect/effect — disambiguates
+// which one is meant, the same way a real spelling test would.
+const WORD_BANK = {
+  // --- Week 1 ---
+  accommodate: "The hotel can accommodate up to six guests in one room.",
+  accompany: "My little brother wanted to accompany me to the shop.",
+  according: "According to the timetable, French is our first lesson.",
+  achieve: "She trained hard to achieve her personal best in swimming.",
+  thought: "I thought the film was going to be much longer.",
+  fought: "The two knights fought bravely in the old story.",
+  bought: "He bought a new pencil case for the start of term.",
+  brought: "She brought her homework to school in a blue folder.",
+  through: "We walked through the park on our way home.",
+  though: "It was raining, though the sun came out later.",
+  tough: "The steak was far too tough to chew easily.",
+  enough: "There wasn't enough time to finish the whole test.",
+  cough: "He had a bad cough all through the night.",
+
+  // --- Week 2 ---
+  aggressive: "The dog became aggressive when a stranger approached the gate.",
+  amateur: "He is only an amateur photographer, not a professional one.",
+  ancient: "The museum has a collection of ancient Roman coins.",
+  apparent: "It was apparent from her face that something was wrong.",
+  dynamic: "The new teacher had a dynamic and energetic teaching style.",
+  typhoon: "The typhoon caused serious flooding across the coastal town.",
+  hyphen: "You need a hyphen to join those two words together.",
+  multiply: "We learned how to multiply fractions in maths today.",
+  magnify: "A microscope can magnify a cell thousands of times.",
+  hygiene: "Good hygiene means washing your hands before every meal.",
+
+  // --- Week 3 ---
+  appreciate: "I really appreciate you helping me with my homework.",
+  attached: "Please find the document attached to this email.",
+  available: "Tickets for the concert are no longer available.",
+  average: "Her average mark this term was much higher than last year.",
+  allowed: "Are we allowed to use calculators in this test?",
+  aloud: "She read the poem aloud to the whole class.",
+  affect: "The weather might affect whether the match goes ahead.",
+  effect: "The medicine had an unusual effect on his appetite.",
+  practice: "Years of practice made her a brilliant violinist.",
+  practise: "You should practise your spellings every single evening.",
+
+  // --- Week 4 ---
+  awkward: "There was an awkward silence after he forgot her name.",
+  bargain: "She found a real bargain in the sale, half price.",
+  bruise: "He got a large bruise on his knee after falling.",
+  category: "Which category does a whale belong to, fish or mammal?",
+  spacious: "Their new house has a bright and spacious kitchen.",
+  vicious: "The film showed a vicious storm sweeping across the coast.",
+  malicious: "Spreading malicious rumours about someone is never kind.",
+  suspicious: "The security guard looked suspicious of the empty bag.",
+  ambitious: "She has ambitious plans to become a doctor one day.",
+  cautious: "Be cautious when crossing such a busy road.",
+
+  // --- Week 5 ---
+  cemetery: "The old cemetery was hidden behind a row of tall trees.",
+  committee: "The school committee meets every Thursday after lessons.",
+  communicate: "It's important to communicate clearly when working in a group.",
+  community: "The whole community came together to clean up the park.",
+  finally: "After three attempts, she finally landed the perfect jump.",
+  carefully: "He carefully carried the tray of glasses across the room.",
+  invention: "The light bulb was a remarkable invention for its time.",
+  poisonous: "Some mushrooms in the forest are actually poisonous.",
+  vexatious: "The lawyer described the complaint as vexatious and unnecessary.",
+  imagination: "Her story showed a huge amount of imagination and creativity.",
+
+  // --- Week 6 ---
+  competition: "She entered the baking competition at the village fair.",
+  conscience: "His conscience wouldn't let him keep the money he found.",
+  conscious: "The patient became conscious again a few hours later.",
+  controversy: "The new rule caused a lot of controversy among students.",
+  official: "The referee's official decision could not be argued with.",
+  crucial: "Getting enough sleep is crucial before an important exam.",
+  essential: "Water is essential for every living thing on Earth.",
+  artificial: "The garden had artificial grass instead of a real lawn.",
+  superficial: "The cut on his arm was only superficial, thankfully.",
+  beneficial: "Regular exercise is beneficial for both body and mind.",
+
+  // --- Week 8 ---
+  convenience: "The shop stayed open late for the convenience of customers.",
+  correspond: "The two pen pals continued to correspond for many years.",
+  criticise: "It's easy to criticise, but harder to offer a solution.",
+  curiosity: "Her curiosity led her to explore every room in the old house.",
+  probably: "It will probably rain later this afternoon.",
+  definitely: "I will definitely finish my project before the deadline.",
+  certainly: "She certainly worked hard to pass her exams.",
+  rarely: "He rarely arrives late for school.",
+  occasionally: "We occasionally visit our grandparents at the weekend.",
+  undoubtedly: "This was undoubtedly the best match of the season.",
+
+  // --- Week 9 ---
+  definite: "There is still no definite date for the school trip.",
+  desperate: "He was desperate to finish the race before it got dark.",
+  determined: "She was determined to beat her own record.",
+  develop: "New skills take time and patience to develop.",
+  sensitivity: "He spoke about the accident with great sensitivity.",
+  visibility: "The thick fog reduced visibility on the motorway.",
+  responsibility: "Looking after the class pet is a big responsibility.",
+  flexibility: "Gymnasts need excellent flexibility to perform well.",
+
+  // --- Week 10 ---
+  dictionary: "She looked up the word in a dictionary.",
+  disastrous: "The picnic was disastrous once the storm began.",
+  embarrass: "He didn't want to embarrass his sister in front of her friends.",
+  environment: "Recycling helps protect the environment for the future.",
+  separate: "Please keep the recycling separate from the general rubbish.",
+  describe: "Can you describe what the suspect was wearing?",
+  increase: "Prices are expected to increase again next year.",
+  imagine: "Try to imagine what life was like a hundred years ago.",
+
+  // --- Week 11 ---
+  equipment: "All the sports equipment is kept in the gym cupboard.",
+  especially: "She loves all animals, especially dogs.",
+  exaggerate: "He tends to exaggerate how difficult his homework was.",
+  excellent: "Her teacher wrote that her essay was excellent.",
+  comfortable: "The new sofa is much more comfortable than the old one.",
+  understandable: "Your mistake was completely understandable given the confusion.",
+  reasonable: "The price of the tickets seemed very reasonable.",
+  responsible: "As the eldest, she felt responsible for her younger brother.",
+  invisible: "In the story, the cloak made its wearer invisible.",
+  terrible: "The traffic on the way to school was terrible this morning.",
+
+  // --- Bonus: class specific words ---
+  barrister: "A barrister argued the case in front of the judge.",
+  solicitor: "They asked a solicitor for advice before signing the contract.",
+  prosecution: "The prosecution presented its evidence to the jury.",
+};
+
+// Each week lists which WORD_BANK keys it covers, split into groups so the
+// source (recap words are last week's key words, tested again on purpose).
+const WEEK1_WORDS = ["accommodate","accompany","according","achieve","thought","fought","bought","brought","through","though","tough","enough","cough"];
+const WEEK2_WORDS = ["aggressive","amateur","ancient","apparent","dynamic","typhoon","hyphen","multiply","magnify","hygiene"];
+const WEEK3_WORDS = ["appreciate","attached","available","average","allowed","aloud","affect","effect","practice","practise"];
+const WEEK4_WORDS = ["awkward","bargain","bruise","category","spacious","vicious","malicious","suspicious","ambitious","cautious"];
+const WEEK5_WORDS = ["cemetery","committee","communicate","community","finally","carefully","invention","poisonous","vexatious","imagination"];
+const WEEK6_WORDS = ["competition","conscience","conscious","controversy","official","crucial","essential","artificial","superficial","beneficial"];
+
+const WEEKS = [
+  { id:"wk1", label:"Week 1", sublabel:"Test w/c 7th September · 'ough' pattern",
+    groups: [
+      {title:"Key words", words:["accommodate","accompany","according","achieve"]},
+      {title:"Spelling pattern: 'ough'", words:["thought","fought","bought","brought","through","though"]},
+      {title:"Bonus 'ough' words", words:["tough","enough","cough"]},
+    ]},
+  { id:"wk2", label:"Week 2", sublabel:"Test w/c 14th September · long 'i' spelt 'y'",
+    groups: [
+      {title:"Key words", words:["aggressive","amateur","ancient","apparent"]},
+      {title:"Spelling pattern: long 'i' spelt 'y'", words:["dynamic","typhoon","hyphen","multiply","magnify","hygiene"]},
+      {title:"Recap: last week's words", words:["accommodate","accompany","according","achieve"]},
+    ]},
+  { id:"wk3", label:"Week 3", sublabel:"Test w/c 21st September · (near) homophones",
+    groups: [
+      {title:"Key words", words:["appreciate","attached","available","average"]},
+      {title:"Spelling pattern: (near) homophones", words:["allowed","aloud","affect","effect","practice","practise"]},
+      {title:"Recap: last week's words", words:["aggressive","amateur","ancient","apparent"]},
+    ]},
+  { id:"wk4", label:"Week 4", sublabel:"Test w/c 28th September · -ious",
+    groups: [
+      {title:"Key words", words:["awkward","bargain","bruise","category"]},
+      {title:"Spelling pattern: -ious", words:["spacious","vicious","malicious","suspicious","ambitious","cautious"]},
+      {title:"Recap: last week's words", words:["appreciate","attached","available","average"]},
+    ]},
+  { id:"wk5", label:"Week 5", sublabel:"Test w/c 5th October · suffixes -ly, -ous, -tion, -ation",
+    groups: [
+      {title:"Key words", words:["cemetery","committee","communicate","community"]},
+      {title:"Suffixes: -ly, -ous, -tion, -ation", words:["finally","carefully","invention","poisonous","vexatious","imagination"]},
+      {title:"Recap: last week's words", words:["awkward","bargain","bruise","category"]},
+    ]},
+  { id:"wk6", label:"Week 6", sublabel:"Test w/c 12th October · suffixes -cial and -tial",
+    groups: [
+      {title:"Key words", words:["competition","conscience","conscious","controversy"]},
+      {title:"Suffixes: -cial and -tial", words:["official","crucial","essential","artificial","superficial","beneficial"]},
+      {title:"Recap: last week's words", words:["cemetery","committee","communicate","community"]},
+    ]},
+  { id:"wk7", label:"Week 7", sublabel:"Test w/c 2nd November · review week: all of Weeks 1–6",
+    groups: [
+      {title:"Review: Weeks 1–6", words: [...WEEK1_WORDS, ...WEEK2_WORDS, ...WEEK3_WORDS, ...WEEK4_WORDS, ...WEEK5_WORDS, ...WEEK6_WORDS]},
+    ]},
+  { id:"wk8", label:"Week 8", sublabel:"Test w/c 9th November · adverbs of possibility",
+    groups: [
+      {title:"Key words", words:["convenience","correspond","criticise","curiosity"]},
+      {title:"Adverbs of possibility", words:["probably","definitely","certainly","rarely","occasionally","undoubtedly"]},
+      {title:"Recap: Week 6 words", words:["competition","conscience","conscious","controversy"]},
+    ]},
+  { id:"wk9", label:"Week 9", sublabel:"Test w/c 16th November · -ity",
+    groups: [
+      {title:"Key words", words:["definite","desperate","determined","develop"]},
+      {title:"Spelling pattern: -ity", words:["curiosity","sensitivity","visibility","community","responsibility","flexibility"]},
+      {title:"Recap: last week's words", words:["convenience","correspond","criticise","curiosity"]},
+    ]},
+  { id:"wk10", label:"Week 10", sublabel:"Test w/c 23rd November · common errors",
+    groups: [
+      {title:"Key words", words:["dictionary","disastrous","embarrass","environment"]},
+      {title:"Common errors", words:["average","separate","describe","increase","imagine","desperate"]},
+      {title:"Recap: last week's words", words:["definite","desperate","determined","develop"]},
+    ]},
+  { id:"wk11", label:"Week 11", sublabel:"Test w/c 30th November · suffixes -ible/-able",
+    groups: [
+      {title:"Key words", words:["equipment","especially","exaggerate","excellent"]},
+      {title:"Suffixes: -ible/-able", words:["comfortable","understandable","reasonable","responsible","invisible","terrible"]},
+      {title:"Recap: last week's words", words:["dictionary","disastrous","embarrass","environment"]},
+    ]},
+  { id:"bonus", label:"Bonus", sublabel:"Class specific words",
+    groups: [
+      {title:"Class specific words", words:["barrister","solicitor","prosecution"]},
+    ]},
+];
+
+// ================= UTIL =================
+function normalize(s){
+  return s.toString().trim().toLowerCase();
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+// Replaces the target word inside its sentence with a blank, so the
+// sentence itself is the prompt (works with or without audio, and is
+// what disambiguates near-homophones like allowed/aloud).
+function blankSentence(sentence, word){
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp("\\b" + escaped + "\\b", "i");
+  return sentence.replace(re, "_____");
+}
+function boldSentence(sentence, word){
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp("\\b(" + escaped + ")\\b", "i");
+  return sentence.replace(re, "<b>$1</b>");
+}
+
+// ================= PREPARE WEEK DATA =================
+function prepareWeek(week){
+  const items = [];
+  week.groups.forEach(g=>{
+    g.words.forEach(w=>{
+      items.push({
+        key: g.title + " :: " + w,
+        group: g.title,
+        word: w,
+        sentence: WORD_BANK[w],
+      });
+    });
+  });
+  week.items = items;
+}
+WEEKS.forEach(prepareWeek);
+
+let currentWeek = null;
+let ITEMS = [];
+
+// ================= PERSISTENCE (this browser's localStorage) =================
+// Mastery is streak-based: a word counts as "mastered" only once it's been
+// spelt correctly three times IN A ROW. Any wrong answer resets that word's
+// streak back to zero — including knocking it out of "mastered" — since a
+// slip means it isn't solid yet. Progress towards 3 is shown as "n/3".
+const STREAK_TO_MASTER = 3;
+let statsCache = {}; // { [item.key]: {streak, attempts} }
+function statsStorageKey(weekId){
+  return "spellingChalkboard:" + weekId;
+}
+function wordStatus(key){
+  const s = statsCache[key];
+  if(!s || s.attempts === 0) return null;
+  if(s.streak >= STREAK_TO_MASTER) return {label:"mastered", cls:"status-mastered"};
+  if(s.streak === 0) return {label:"needs practice", cls:"status-practice"};
+  return {label: s.streak + " / " + STREAK_TO_MASTER, cls:"status-learning"};
+}
+function countMastered(){
+  return ITEMS.filter(it => (wordStatus(it.key)||{}).label === "mastered").length;
+}
+function itemsNeedingPractice(){
+  // Anything attempted but not yet at a full streak of 3 still needs more
+  // correct answers in a row, so it's fair game for a practice round.
+  return ITEMS.filter(it => {
+    const s = statsCache[it.key];
+    return s && s.attempts > 0 && s.streak < STREAK_TO_MASTER;
+  });
+}
+function loadStats(week){
+  statsCache = {};
+  const note = document.getElementById("syncNote");
+  try {
+    const raw = localStorage.getItem(statsStorageKey(week.id));
+    statsCache = (raw && JSON.parse(raw).words) || {};
+    note.textContent = "Progress is saved on this device.";
+  } catch(e){
+    note.textContent = "Progress can't be saved on this device right now.";
+  }
+  refreshStatsUI();
+}
+function recordResult(item, correct){
+  const key = item.key;
+  const prev = statsCache[key] || {streak:0, attempts:0};
+  const next = {
+    streak: correct ? Math.min(prev.streak + 1, STREAK_TO_MASTER) : 0,
+    attempts: prev.attempts + 1
+  };
+  statsCache[key] = next;
+  refreshStatsUI();
+  try {
+    localStorage.setItem(statsStorageKey(currentWeek.id), JSON.stringify({ words: statsCache }));
+  } catch(e){ /* best effort */ }
+}
+function refreshStatsUI(){
+  if(!ITEMS.length) return;
+  const mastered = countMastered();
+  const chip = document.getElementById("masteryChip");
+  chip.textContent = mastered + " / " + ITEMS.length + " mastered";
+  const attempted = Object.keys(statsCache).length > 0;
+  chip.classList.toggle("hidden", !attempted);
+
+  // Getting a word right once or twice (but not yet three times in a row)
+  // doesn't move the mastered count, but it IS real progress — this bar
+  // shows every correct-in-a-row credit she's banked, out of the total
+  // possible, so effort shows up even before a word is fully "mastered".
+  const totalPossible = ITEMS.length * STREAK_TO_MASTER;
+  const earned = ITEMS.reduce((sum, it) => {
+    const s = statsCache[it.key];
+    return sum + (s ? Math.min(s.streak, STREAK_TO_MASTER) : 0);
+  }, 0);
+  const overallWrap = document.getElementById("overallProgress");
+  overallWrap.classList.toggle("hidden", !attempted);
+  if(attempted){
+    document.getElementById("overallProgressLabel").textContent =
+      earned + " / " + totalPossible + " correct-in-a-row credits earned";
+    document.getElementById("overallProgressFill").style.width =
+      Math.round(100 * earned / totalPossible) + "%";
+  }
+
+  const practiceBtn = document.getElementById("practiceOnlyBtn");
+  const n = itemsNeedingPractice().length;
+  practiceBtn.textContent = "Needs practice (" + n + ")";
+  practiceBtn.disabled = n === 0;
+
+  renderFlashStatus();
+}
+
+// ================= SCREEN NAV =================
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+const weekGrid = document.getElementById("weekGrid");
+WEEKS.forEach(w=>{
+  const btn = document.createElement("button");
+  btn.className = "board-card";
+  btn.innerHTML = '<span class="emoji">✏️</span>' +
+    '<span class="titles"><span class="t1">' + w.label + '</span>' +
+    '<span class="t2">' + w.sublabel + '</span></span>' +
+    '<span class="arrow">&rsaquo;</span>';
+  btn.addEventListener("click", ()=> openWeek(w));
+  weekGrid.appendChild(btn);
+});
+
+document.getElementById("backToWeek").addEventListener("click", ()=> showScreen("screen-week"));
+
+function openWeek(week){
+  pendingNext = null;
+  currentWeek = week;
+  ITEMS = week.items;
+  document.getElementById("mainTitle").textContent = week.label;
+  document.getElementById("mainSubtitle").textContent = week.sublabel;
+  document.getElementById("masteryChip").classList.add("hidden");
+  document.getElementById("syncNote").textContent = "";
+
+  flashOrder = ITEMS.map((_,i)=>i);
+  flashIdx = 0;
+  flashRevealed = false;
+
+  document.getElementById("quizSetup").classList.remove("hidden");
+  document.getElementById("quizPlay").classList.add("hidden");
+  document.getElementById("quizResults").classList.add("hidden");
+  wordSet = "all";
+  setSelected("setRow", "all");
+  document.getElementById("restartAllBtn").textContent = "Start over (all words)";
+
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelector('.tab-btn[data-tab="flash"]').classList.add("active");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("panel-flash").classList.add("active");
+
+  showScreen("screen-main");
+  renderFlash();
+  loadStats(week);
+}
+
+function setSelected(rowId, val){
+  const row = document.getElementById(rowId);
+  [...row.children].forEach(b=>{
+    b.classList.toggle("selected", b.dataset.val === val);
+  });
+}
+
+// ================= TABS =================
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-"+btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ================= STUDY (FLASHCARDS) =================
+let flashOrder = [];
+let flashIdx = 0;
+let flashRevealed = false;
+
+function renderFlash(){
+  if(!ITEMS.length) return;
+  const item = ITEMS[flashOrder[flashIdx]];
+  const sentEl = document.getElementById("flashSentence");
+  sentEl.innerHTML = flashRevealed ? boldSentence(item.sentence, item.word) : blankSentence(item.sentence, item.word);
+  document.getElementById("flashHint").textContent = flashRevealed ? "tap to hide the word again" : "tap to reveal the word";
+  document.getElementById("flashProgress").textContent = (flashIdx+1) + " / " + ITEMS.length;
+
+  const groupEl = document.getElementById("flashGroup");
+  if(item.group){ groupEl.textContent = item.group; groupEl.classList.remove("hidden"); }
+  else groupEl.classList.add("hidden");
+
+  renderFlashStatus();
+}
+function renderFlashStatus(){
+  if(!ITEMS.length) return;
+  const item = ITEMS[flashOrder[flashIdx]];
+  const el = document.getElementById("flashStatus");
+  const st = wordStatus(item.key);
+  if(!st){ el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  el.className = "status " + st.cls;
+  el.textContent = st.label;
+}
+document.getElementById("flashcard").addEventListener("click", ()=>{
+  flashRevealed = !flashRevealed;
+  renderFlash();
+});
+document.getElementById("flashNext").addEventListener("click", ()=>{
+  flashIdx = (flashIdx+1) % ITEMS.length;
+  flashRevealed = false;
+  renderFlash();
+});
+document.getElementById("flashPrev").addEventListener("click", ()=>{
+  flashIdx = (flashIdx-1+ITEMS.length) % ITEMS.length;
+  flashRevealed = false;
+  renderFlash();
+});
+document.getElementById("flashShuffle").addEventListener("click", ()=>{
+  flashOrder = shuffle(flashOrder);
+  flashIdx = 0;
+  flashRevealed = false;
+  renderFlash();
+});
+
+// ================= SPELLING TEST SETUP =================
+let wordSet = "all";
+document.getElementById("setRow").addEventListener("click", (e)=>{
+  const btn = e.target.closest("button");
+  if(!btn || btn.disabled) return;
+  [...document.getElementById("setRow").children].forEach(b=>b.classList.remove("selected"));
+  btn.classList.add("selected");
+  wordSet = btn.dataset.val;
+});
+
+document.getElementById("startQuizBtn").addEventListener("click", startQuiz);
+document.getElementById("retryPracticeBtn").addEventListener("click", ()=>{
+  wordSet = "practice";
+  startQuiz();
+});
+document.getElementById("restartAllBtn").addEventListener("click", ()=>{
+  wordSet = "all";
+  startQuiz();
+});
+
+// ================= SPELLING TEST PLAY =================
+let quizQueue = [];
+let quizIdx = 0;
+let quizScore = 0;
+let quizMissed = [];
+let answered = false;
+const speechOK = ("speechSynthesis" in window);
+
+// ================= VOICE PICKER =================
+// Which voices exist (and how they sound) is entirely up to the device, so
+// rather than guess at one, let her pick from whatever's actually installed
+// and remember the choice on this device.
+let availableVoices = [];
+let selectedVoiceName = null;
+
+function loadVoiceList(){
+  if(!speechOK) return;
+  availableVoices = window.speechSynthesis.getVoices() || [];
+  const english = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+  const list = english.length ? english : availableVoices;
+  const select = document.getElementById("voiceSelect");
+  const field = document.getElementById("voiceField");
+  if(!list.length){
+    field.classList.add("hidden");
+    return;
+  }
+  field.classList.remove("hidden");
+
+  let saved = null;
+  try { saved = localStorage.getItem("spellingChalkboard:voice"); } catch(e){ /* ignore */ }
+  const stillAvailable = saved && list.some(v => v.name === saved);
+  const preferred = list.find(v => v.lang && v.lang.toLowerCase() === "en-gb");
+  const chosen = stillAvailable ? saved : (preferred ? preferred.name : list[0].name);
+
+  select.innerHTML = "";
+  list.forEach(v=>{
+    const opt = document.createElement("option");
+    opt.value = v.name;
+    opt.textContent = v.name + " (" + v.lang + ")";
+    select.appendChild(opt);
+  });
+  select.value = chosen;
+  selectedVoiceName = chosen;
+}
+if(speechOK){
+  loadVoiceList();
+  // Chrome/Android load the voice list asynchronously; Safari/iOS usually
+  // has it immediately, but this covers both.
+  window.speechSynthesis.onvoiceschanged = loadVoiceList;
+}
+const voiceSelectEl = document.getElementById("voiceSelect");
+if(voiceSelectEl){
+  voiceSelectEl.addEventListener("change", (e)=>{
+    selectedVoiceName = e.target.value;
+    try { localStorage.setItem("spellingChalkboard:voice", selectedVoiceName); } catch(e){ /* ignore */ }
+  });
+}
+const voiceTestBtn = document.getElementById("voiceTestBtn");
+if(voiceTestBtn){
+  voiceTestBtn.addEventListener("click", ()=> speakWord("hello"));
+}
+
+function startQuiz(){
+  pendingNext = null;
+  const pool = wordSet === "practice" && itemsNeedingPractice().length ? itemsNeedingPractice() : ITEMS;
+  quizQueue = shuffle(pool);
+  quizIdx = 0;
+  quizScore = 0;
+  quizMissed = [];
+  document.getElementById("quizSetup").classList.add("hidden");
+  document.getElementById("quizResults").classList.add("hidden");
+  document.getElementById("quizPlay").classList.remove("hidden");
+  renderQuestion();
+}
+
+// Reads just the word itself — once per press, and no sentence — so the
+// only context she gets for near-homophones (allowed/aloud, affect/effect)
+// is the blanked sentence already on screen, not a spoken giveaway. Uses
+// whichever voice is currently selected in the setup screen.
+function speakWord(word){
+  if(!speechOK) return;
+  try {
+    window.speechSynthesis.cancel(); // stop any reading still in progress so presses don't stack
+    const u = new SpeechSynthesisUtterance(word);
+    const v = availableVoices.find(v => v.name === selectedVoiceName);
+    if(v){ u.voice = v; u.lang = v.lang; }
+    else { u.lang = "en-GB"; }
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  } catch(e){ /* ignore — sentence-with-blank still works without audio */ }
+}
+function speakItem(item){
+  speakWord(item.word);
+}
+
+function renderQuestion(){
+  answered = false;
+  const item = quizQueue[quizIdx];
+  document.getElementById("quizCounter").textContent = "Question " + (quizIdx+1) + " / " + quizQueue.length;
+  document.getElementById("quizScore").textContent = "Score: " + quizScore;
+  document.getElementById("progressFill").style.width = (100*quizIdx/quizQueue.length) + "%";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").className = "feedback";
+  document.getElementById("promptLabel").textContent = item.group || "Fill in the missing word";
+  document.getElementById("promptSentence").textContent = blankSentence(item.sentence, item.word);
+
+  // Shows how close THIS word already is to mastered, so a run of correct
+  // answers reads as visible progress even before it flips to "mastered".
+  const promptProgress = document.getElementById("promptProgress");
+  const st = wordStatus(item.key);
+  if(st && st.label === "mastered"){
+    promptProgress.textContent = "⭐ Already mastered — keep it up!";
+    promptProgress.classList.remove("hidden");
+  } else if(st && st.cls === "status-learning"){
+    promptProgress.textContent = "This word: " + st.label + " correct in a row so far";
+    promptProgress.classList.remove("hidden");
+  } else {
+    promptProgress.classList.add("hidden");
+  }
+
+  const speakBtn = document.getElementById("speakBtn");
+  speakBtn.disabled = !speechOK;
+  speakBtn.textContent = speechOK ? "\u{1F50A} Hear it" : "\u{1F507} Audio not available here";
+  speakBtn.onclick = ()=> speakItem(item);
+
+  document.getElementById("nextBtn").classList.add("hidden");
+  document.getElementById("typeSubmit").classList.remove("hidden");
+
+  const input = document.getElementById("typeInput");
+  input.value = "";
+  input.className = "";
+  input.disabled = false;
+  setTimeout(()=>input.focus(), 50);
+}
+
+// After a wrong answer the correct spelling stays on screen until she
+// taps Next (or presses Enter on a keyboard) — no auto-advance.
+let pendingNext = null;
+function waitForNext(fn){
+  const btn = document.getElementById("nextBtn");
+  document.getElementById("typeSubmit").classList.add("hidden");
+  btn.classList.remove("hidden");
+  const go = ()=>{
+    if(pendingNext !== go) return; // guard against a double tap/Enter
+    pendingNext = null;
+    btn.classList.add("hidden");
+    fn();
+  };
+  pendingNext = go;
+  btn.onclick = go;
+}
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Enter" && pendingNext){ e.preventDefault(); pendingNext(); }
+});
+
+document.getElementById("typeForm").addEventListener("submit", (e)=> e.preventDefault());
+document.getElementById("typeSubmit").addEventListener("click", submitTyped);
+document.getElementById("typeInput").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter"){ e.stopPropagation(); submitTyped(); }
+});
+function submitTyped(){
+  if(answered) return;
+  const item = quizQueue[quizIdx];
+  const input = document.getElementById("typeInput");
+  const raw = input.value;
+  if(!raw.trim()) return;
+  answered = true;
+  const isCorrect = normalize(raw) === normalize(item.word);
+  input.disabled = true;
+  input.className = isCorrect ? "correct" : "wrong";
+  const feedback = document.getElementById("feedback");
+  if(isCorrect){
+    quizScore++;
+    feedback.textContent = "Correct!";
+    feedback.className = "feedback good";
+  } else {
+    quizMissed.push(item);
+    feedback.textContent = "Correct spelling: " + item.word;
+    feedback.className = "feedback bad";
+  }
+  document.getElementById("quizScore").textContent = "Score: " + quizScore;
+  recordResult(item, isCorrect);
+  const advance = ()=>{
+    quizIdx++;
+    if(quizIdx >= quizQueue.length){
+      finishQuiz();
+    } else {
+      renderQuestion();
+    }
+  };
+  if(isCorrect) setTimeout(advance, 700);
+  else waitForNext(advance);
+}
+
+function finishQuiz(){
+  document.getElementById("quizPlay").classList.add("hidden");
+  document.getElementById("quizResults").classList.remove("hidden");
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("resultScore").textContent = quizScore + " / " + quizQueue.length;
+  const pct = Math.round(100*quizScore/quizQueue.length);
+  let msg;
+  if(pct === 100) msg = "Perfect score! \u{1F31F}";
+  else if(pct >= 80) msg = "Great job — almost there!";
+  else if(pct >= 50) msg = "Good start — keep practicing.";
+  else msg = "Keep going, it'll stick with practice.";
+  document.getElementById("resultMsg").textContent = msg;
+  document.getElementById("resultProgress").textContent = countMastered() + " / " + ITEMS.length + " words now mastered overall";
+
+  const seen = new Set();
+  const missedThisRun = quizMissed.filter(item=>{
+    if(seen.has(item.key)) return false;
+    seen.add(item.key);
+    return true;
+  });
+
+  const reviewWrap = document.getElementById("resultReviewWrap");
+  const reviewList = document.getElementById("reviewList");
+  reviewList.innerHTML = "";
+  if(missedThisRun.length === 0){
+    reviewWrap.classList.add("hidden");
+  } else {
+    reviewWrap.classList.remove("hidden");
+    missedThisRun.forEach(item=>{
+      const li = document.createElement("li");
+      li.innerHTML = "<b>" + item.word + "</b><span>" + item.sentence + "</span>";
+      reviewList.appendChild(li);
+    });
+  }
+
+  const practiceBtn = document.getElementById("retryPracticeBtn");
+  const n = itemsNeedingPractice().length;
+  practiceBtn.textContent = "Practice words that need it (" + n + ")";
+  practiceBtn.classList.toggle("hidden", n === 0);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,3477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vocab">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#16342a">
+<link rel="apple-touch-icon" href="vocab-icon.png">
+<link rel="icon" href="vocab-icon.png">
+<title>Vocab Chalkboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  :root {
+    --board-top: #16342a;
+    --board-bottom: #0e241c;
+    --rail: #0a1d16;
+    --chalk: #f6f0e2;
+    --chalk-dim: #cfe3d6;
+    --chalk-faint: #8fac9c;
+    --ink: #17302a;
+    --ink-soft: #4a6259;
+    --gold: #e7b64c;
+    --gold-ink: #4a3410;
+    --good: #3f9d63;
+    --good-bg: #e5f4e9;
+    --bad: #d1584c;
+    --bad-bg: #fbe8e5;
+    --line: #d9d0bb;
+    --font-display: 'Caveat', 'Segoe Script', cursive;
+    --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-body);
+    color: var(--chalk);
+    background:
+      radial-gradient(circle at 18% 24%, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 1.6px),
+      radial-gradient(circle at 68% 78%, rgba(255,255,255,0.035) 0, rgba(255,255,255,0.035) 1px, transparent 1.6px),
+      radial-gradient(circle at 40% 55%, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1.6px),
+      linear-gradient(165deg, var(--board-top), var(--board-bottom));
+    background-size: 46px 46px, 63px 63px, 38px 38px, 100% 100%;
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px 56px;
+  }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .wrap { width: 100%; max-width: 460px; }
+
+  .brand { text-align: center; margin-bottom: 22px; }
+  .brand h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin: 0;
+    color: var(--chalk);
+    letter-spacing: 0.01em;
+    text-shadow: 0 0 1px rgba(255,255,255,0.25), 0 2px 0 rgba(0,0,0,0.15);
+  }
+  .brand .rule {
+    width: 96px;
+    height: 3px;
+    margin: 6px auto 10px;
+    border-radius: 3px;
+    background: var(--gold);
+    opacity: 0.85;
+  }
+  .brand p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--chalk-dim);
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .backlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--chalk-dim);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 0 14px;
+  }
+  .backlink:hover { color: var(--gold); }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--chalk);
+    margin: 0 0 2px;
+  }
+  .section-sub {
+    font-size: 0.88rem;
+    color: var(--chalk-dim);
+    margin: 0 0 18px;
+  }
+
+  /* --- Picker cards (subject / week), styled like index cards taped to the board --- */
+  .picker-grid { display: flex; flex-direction: column; gap: 16px; }
+  .board-card {
+    position: relative;
+    background: var(--chalk);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 18px 20px;
+    text-align: left;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.04) inset;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transform: rotate(var(--tilt, 0deg));
+  }
+  .board-card:nth-child(odd) { --tilt: -0.6deg; }
+  .board-card:nth-child(even) { --tilt: 0.5deg; }
+  .board-card::before {
+    content: "";
+    position: absolute;
+    top: -8px; left: 22px;
+    width: 34px; height: 14px;
+    background: rgba(231,182,76,0.55);
+    border: 1px solid rgba(231,182,76,0.7);
+    transform: rotate(-3deg);
+  }
+  .board-card .emoji { font-size: 1.9rem; line-height: 1; }
+  .board-card .titles { flex: 1; min-width: 0; }
+  .board-card .t1 { font-size: 1.15rem; font-weight: 800; }
+  .board-card .t2 { font-size: 0.82rem; color: var(--ink-soft); margin-top: 3px; }
+  .board-card .arrow { color: var(--ink-soft); font-size: 1.3rem; }
+
+  /* --- Tabs (underline style) --- */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 16px;
+    border-bottom: 1px dashed rgba(255,255,255,0.22);
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--chalk-faint);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 6px 2px 12px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-btn.active {
+    color: var(--chalk);
+    border-bottom-color: var(--gold);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: var(--chalk);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.3);
+  }
+
+  .progress-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--gold);
+    background: rgba(231,182,76,0.12);
+    border: 1px solid rgba(231,182,76,0.35);
+    border-radius: 999px;
+    padding: 4px 11px;
+    margin-bottom: 18px;
+  }
+  .sync-note { font-size: 0.72rem; color: var(--chalk-faint); margin: -12px 0 18px; }
+
+  /* --- Setup fields --- */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-weight: 800;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+  .opt-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .opt-row button {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: 2px solid var(--line);
+    background: #fffdf8;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .opt-row button.selected {
+    border-color: var(--good);
+    background: var(--good-bg);
+    color: #205c37;
+  }
+  .opt-row button:disabled { opacity: 0.45; cursor: default; }
+
+  .primary-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 9px;
+    border: none;
+    background: var(--gold);
+    color: var(--gold-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .primary-btn:active { transform: scale(0.98); }
+  .secondary-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 9px;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  /* --- Flashcards --- */
+  .flash-progress {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--chalk-dim);
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .flashcard {
+    background: var(--chalk);
+    color: var(--ink);
+    border-radius: 10px;
+    min-height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    cursor: pointer;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.3);
+    user-select: none;
+  }
+  .flashcard .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .flashcard .word {
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 1.7rem;
+    word-break: break-word;
+  }
+  .flashcard .meaning {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .flashcard .hint {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+  .flashcard .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-top: 10px;
+  }
+  .status-mastered { background: var(--good-bg); color: #205c37; }
+  .status-learning { background: rgba(231,182,76,0.18); color: #7a5a10; }
+  .status-practice { background: var(--bad-bg); color: #8f2e24; }
+
+  .flash-nav {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .flash-nav button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 9px;
+    border: 1px dashed rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.06);
+    color: var(--chalk);
+    font-family: var(--font-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* --- Quiz play --- */
+  .quiz-progress {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--chalk-dim);
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.14);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.2s;
+  }
+  .prompt-word {
+    font-weight: 800;
+    font-size: 1.7rem;
+    text-align: center;
+    margin: 4px 0 4px;
+    text-wrap: balance;
+  }
+  .prompt-label {
+    text-align: center;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-weight: 800;
+  }
+  .prompt-meaning {
+    text-align: center;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin: -2px 0 14px;
+  }
+  .choice-btn {
+    width: 100%;
+    text-align: left;
+    padding: 13px 16px;
+    margin-bottom: 10px;
+    border-radius: 9px;
+    border: 2px solid var(--line);
+    background: #fffdf8;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .choice-btn.correct { border-color: var(--good); background: var(--good-bg); color: #205c37; }
+  .choice-btn.wrong { border-color: var(--bad); background: var(--bad-bg); color: #8f2e24; }
+  .choice-btn:disabled { cursor: default; }
+
+  .type-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .type-row input {
+    flex: 1;
+    padding: 13px;
+    border-radius: 9px;
+    border: 2px solid var(--line);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    background: #fffdf8;
+    color: var(--ink);
+  }
+  .type-row input.correct { border-color: var(--good); background: var(--good-bg); }
+  .type-row input.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .feedback {
+    font-size: 0.9rem;
+    font-weight: 700;
+    min-height: 22px;
+    margin-bottom: 6px;
+  }
+  .feedback.good { color: #205c37; }
+  .feedback.bad { color: #8f2e24; }
+
+  /* --- Results --- */
+  .score-big {
+    font-family: var(--font-body);
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 4px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-sub {
+    text-align: center;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+  }
+  .score-progress {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #205c37;
+    margin-bottom: 18px;
+  }
+  .review-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+  }
+  .review-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.92rem;
+  }
+  .review-list b { color: #8f5b12; white-space: nowrap; }
+  .review-list span { text-align: right; color: var(--ink-soft); }
+
+  /* --- Sentence practice (Translate / Identify) --- */
+  .sentence-intro { font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.4; }
+  .sentence-latin {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2rem;
+    text-align: center;
+    margin: 2px 0 16px;
+    text-wrap: balance;
+  }
+  .hl-word {
+    color: #8f5b12;
+    text-decoration: underline;
+    text-decoration-color: var(--gold);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+  }
+  .identify-question {
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin: -4px 0 16px;
+  }
+  .endings-english {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .lemma-hint {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .vf-english {
+    font-family: var(--font-body);
+    font-size: 1.35rem;
+    font-weight: 800;
+  }
+  .type-tip { font-size: 0.78rem; color: var(--ink-soft); margin: -4px 0 10px; }
+  .dir-note { font-size: 0.78rem; color: var(--ink-soft); margin: 8px 0 0; line-height: 1.35; }
+  .sb-vocab { background: #fffdf8; border: 1px dashed var(--line); border-radius: 9px; padding: 10px 14px; margin-bottom: 16px; }
+  .sb-vocab-title, .sb-step { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .sb-vocab ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.9rem; line-height: 1.5; }
+  .sb-step { margin: 4px 0 10px; color: var(--ink); }
+  .sb-part { border: 2px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; background: #fffdf8; }
+  .sb-part-title { font-weight: 800; margin-bottom: 6px; }
+  .sb-part-title span { font-weight: 600; color: var(--ink-soft); }
+  .sb-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .sb-row-label { width: 74px; flex: none; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); }
+  .sb-opts { flex: 1; display: flex; gap: 4px; min-width: 0; }
+  .sb-opts button { flex: 1; min-width: 0; padding: 8px 1px; border-radius: 7px; border: 2px solid var(--line); background: #fff; color: var(--ink); font-family: var(--font-body); font-size: 0.74rem; font-weight: 700; cursor: pointer; overflow-wrap: anywhere; }
+  .sb-opts button.selected { border-color: var(--ink); background: #e9eee9; }
+  .sb-opts button.correct { border-color: var(--good); background: var(--good-bg); color: #205c37; }
+  .sb-opts button.wrong { border-color: var(--bad); background: var(--bad-bg); color: #8f2e24; }
+  .sb-opts button:disabled { cursor: default; }
+  .sb-breakdown { font-size: 0.88rem; line-height: 1.5; background: #fffdf8; border-radius: 9px; border: 1px solid var(--line); padding: 10px 14px; margin-bottom: 10px; }
+  .sb-breakdown b { color: var(--ink); }
+  .sb-breakdown ul { margin: 4px 0 0; padding-left: 18px; }
+  #builderInput.correct { border-color: var(--good); background: var(--good-bg); }
+  #builderInput.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <h1>Vocab Chalkboard</h1>
+    <div class="rule"></div>
+    <p id="brandTagline">Flashcards &amp; quizzes for this week's work</p>
+  </div>
+
+  <!-- SCREEN 1: SUBJECT PICKER -->
+  <div class="screen active" id="screen-subject">
+    <div class="picker-grid" id="subjectGrid"></div>
+  </div>
+
+  <!-- SCREEN 2: WEEK PICKER -->
+  <div class="screen" id="screen-week">
+    <button class="backlink" id="backToSubject">&larr; Change subject</button>
+    <div class="section-title" id="weekScreenTitle">Latin</div>
+    <p class="section-sub">Pick a week to practice</p>
+    <div class="picker-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- SCREEN 3: MAIN TRAINER -->
+  <div class="screen" id="screen-main">
+    <button class="backlink" id="backToWeek">&larr; Change subject / week</button>
+    <div class="section-title" id="mainTitle">Latin</div>
+    <p class="section-sub" id="mainSubtitle">Week 1</p>
+    <div class="progress-chip hidden" id="masteryChip">0 / 0 mastered</div>
+    <p class="sync-note" id="syncNote"></p>
+
+    <div class="tabs">
+      <button class="tab-btn hidden" data-tab="builder" data-mode="normal" id="tabBuilder">Build sentences</button>
+      <button class="tab-btn hidden" data-tab="builder" data-mode="bonus" id="tabBonus">Bonus</button>
+      <button class="tab-btn active" data-tab="flash">Flashcards</button>
+      <button class="tab-btn" data-tab="quiz">Quiz</button>
+      <button class="tab-btn hidden" data-tab="translate" id="tabTranslate">Translate</button>
+      <button class="tab-btn hidden" data-tab="identify" id="tabIdentify">Identify</button>
+      <button class="tab-btn hidden" data-tab="endings" id="tabEndings">Endings</button>
+      <button class="tab-btn hidden" data-tab="verbforms" id="tabVerbforms">Verb forms</button>
+    </div>
+
+    <!-- FLASHCARDS -->
+    <div class="panel active" id="panel-flash">
+      <div class="flash-progress" id="flashProgress">1 / 26</div>
+      <div class="flashcard" id="flashcard">
+        <div>
+          <div class="eyebrow hidden" id="flashGroup">Group</div>
+          <div class="word" id="flashFront">word</div>
+          <div class="meaning hidden" id="flashMeaning">meaning</div>
+          <div class="hint" id="flashHint">tap to flip</div>
+          <div class="status hidden" id="flashStatus">new</div>
+        </div>
+      </div>
+      <div class="flash-nav">
+        <button id="flashPrev">&larr; Prev</button>
+        <button id="flashShuffle">Shuffle</button>
+        <button id="flashNext">Next &rarr;</button>
+      </div>
+    </div>
+
+    <!-- QUIZ SETUP / PLAY / RESULTS -->
+    <div class="panel" id="panel-quiz">
+
+      <div class="card" id="quizSetup">
+        <div class="field" id="dirField">
+          <label>Direction</label>
+          <div class="opt-row" id="dirRow"></div>
+          <p class="dir-note hidden" id="dirNote"></p>
+        </div>
+        <div class="field">
+          <label>Answer style</label>
+          <div class="opt-row" id="modeRow">
+            <button data-val="choice">Multiple choice</button>
+            <button data-val="type">Type the answer</button>
+          </div>
+        </div>
+        <div class="field">
+          <label id="setFieldLabel">Words</label>
+          <div class="opt-row" id="setRow">
+            <button data-val="all" class="selected">All words</button>
+            <button data-val="practice" id="practiceOnlyBtn" disabled>Needs practice (0)</button>
+          </div>
+        </div>
+        <button class="primary-btn" id="startQuizBtn">Start quiz</button>
+      </div>
+
+      <div id="quizPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="quizCounter">Question 1 / 26</span>
+          <span id="quizScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label" id="promptLabel">&rarr; English</div>
+          <div class="prompt-word" id="promptWord">word</div>
+          <div class="prompt-meaning hidden" id="promptMeaning">meaning</div>
+          <div id="choicesWrap"></div>
+          <div id="typeWrap" class="hidden">
+            <div class="type-row">
+              <form id="typeForm" autocomplete="off" action="javascript:void(0);" style="flex:1; display:flex;">
+                <input type="text" id="typeInput" placeholder="Type your answer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" name="vocab-answer" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" style="width:100%;">
+              </form>
+            </div>
+            <div class="type-tip hidden" id="typeTip"></div>
+            <button class="primary-btn" id="typeSubmit">Check</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+          <button class="primary-btn hidden" id="nextBtn">Next &rarr;</button>
+        </div>
+      </div>
+
+      <div id="quizResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="resultScore">0 / 26</div>
+          <div class="score-sub" id="resultMsg">Nice work!</div>
+          <div class="score-progress" id="resultProgress"></div>
+          <div id="resultReviewWrap">
+            <label style="font-weight:800; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);">Review your misses</label>
+            <ul class="review-list" id="reviewList"></ul>
+          </div>
+          <button class="primary-btn" id="retryPracticeBtn">Practice words that need it</button>
+          <button class="secondary-btn" id="restartAllBtn">Start over (all words)</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SENTENCES: TRANSLATE -->
+    <div class="panel" id="panel-translate">
+      <div class="card" id="translateIntro">
+        <p class="sentence-intro">Short Latin sentences using this week's words. Pick the correct English translation &mdash; this checks whether you can actually read who's doing what to whom, not just recite endings.</p>
+        <button class="primary-btn" id="startTranslateBtn">Start</button>
+      </div>
+      <div id="translatePlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="translateCounter">Question 1 / 12</span>
+          <span id="translateScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="translateProgressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label">Latin</div>
+          <div class="sentence-latin" id="translateSentence">...</div>
+          <div id="translateChoices"></div>
+          <div class="feedback" id="translateFeedback"></div>
+          <button class="primary-btn hidden" id="translateNextBtn">Next &rarr;</button>
+        </div>
+      </div>
+      <div id="translateResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="translateResultScore">0 / 12</div>
+          <div class="score-sub" id="translateResultMsg">Nice work!</div>
+          <button class="primary-btn" id="translateAgainBtn">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENTENCES: IDENTIFY -->
+    <div class="panel" id="panel-identify">
+      <div class="card" id="identifyIntro">
+        <p class="sentence-intro">Same sentences, but this time pick out what a word is <em>doing</em> &mdash; is it the subject, the direct object, the indirect object, or what tense is the verb?</p>
+        <button class="primary-btn" id="startIdentifyBtn">Start</button>
+      </div>
+      <div id="identifyPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="identifyCounter">Question 1 / 15</span>
+          <span id="identifyScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="identifyProgressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label">Latin</div>
+          <div class="sentence-latin" id="identifySentence">...</div>
+          <div class="identify-question" id="identifyQuestion">What job is this word doing?</div>
+          <div id="identifyChoices"></div>
+          <div class="feedback" id="identifyFeedback"></div>
+          <button class="primary-btn hidden" id="identifyNextBtn">Next &rarr;</button>
+        </div>
+      </div>
+      <div id="identifyResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="identifyResultScore">0 / 15</div>
+          <div class="score-sub" id="identifyResultMsg">Nice work!</div>
+          <button class="primary-btn" id="identifyAgainBtn">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENTENCES: ENDINGS (like Section B of the test) -->
+    <div class="panel" id="panel-endings">
+      <div class="card" id="endingsIntro">
+        <p class="sentence-intro">Like Section B of the test: you get the English sentence and the Latin with one word missing. The dictionary word is given in brackets &mdash; pick the form with the right ending.</p>
+        <button class="primary-btn" id="startEndingsBtn">Start</button>
+      </div>
+      <div id="endingsPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="endingsCounter">Question 1 / 15</span>
+          <span id="endingsScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="endingsProgressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label">English</div>
+          <div class="endings-english" id="endingsEnglish">...</div>
+          <div class="prompt-label">Latin</div>
+          <div class="sentence-latin" id="endingsSentence">...</div>
+          <div id="endingsChoices"></div>
+          <div class="feedback" id="endingsFeedback"></div>
+          <button class="primary-btn hidden" id="endingsNextBtn">Next &rarr;</button>
+        </div>
+      </div>
+      <div id="endingsResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="endingsResultScore">0 / 15</div>
+          <div class="score-sub" id="endingsResultMsg">Nice work!</div>
+          <button class="primary-btn" id="endingsAgainBtn">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENTENCE BUILDER (English -> Latin, Section B style) -->
+    <div class="panel" id="panel-builder">
+      <div class="card" id="builderIntro">
+        <p class="sentence-intro" id="builderIntroText">You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; tense, person and singular/plural for the verb. <b>2.</b> Write the whole sentence in Latin with the right endings.</p>
+        <p class="sentence-intro">Only the 1st, 2nd and 3rd declensions, regular verbs, and sum / adsum / absum. New sentences every round.</p>
+        <button class="primary-btn" id="startBuilderBtn">Start (10 sentences)</button>
+      </div>
+      <div id="builderPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="builderCounter">Sentence 1 / 10</span>
+          <span id="builderScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="builderProgressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label">English</div>
+          <div class="endings-english" id="builderEnglish">...</div>
+          <div class="sb-vocab">
+            <div class="sb-vocab-title">Vocabulary</div>
+            <ul id="builderVocab"></ul>
+          </div>
+          <div class="sb-step">1. Identify each word</div>
+          <div id="builderParts"></div>
+          <div class="sb-step">2. Write it in Latin</div>
+          <div class="type-row">
+            <form id="builderForm" autocomplete="off" action="javascript:void(0);" style="flex:1; display:flex;">
+              <input type="text" id="builderInput" placeholder="Type the Latin sentence" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" name="latin-sentence" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" style="width:100%;">
+            </form>
+          </div>
+          <div class="type-tip">Any word order is fine &mdash; usually the verb goes last.</div>
+          <button class="primary-btn" id="builderCheck">Check</button>
+          <div class="feedback" id="builderFeedback"></div>
+          <div class="sb-breakdown hidden" id="builderBreakdown"></div>
+          <button class="primary-btn hidden" id="builderNextBtn">Next &rarr;</button>
+        </div>
+      </div>
+      <div id="builderResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="builderResultScore">0 / 0</div>
+          <div class="score-sub" id="builderResultMsg">Nice work!</div>
+          <div class="score-progress" id="builderResultDetail"></div>
+          <button class="primary-btn" id="builderAgainBtn">10 new sentences</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VERB FORMS (page 9 endings applied to checklist verbs) -->
+    <div class="panel" id="panel-verbforms">
+      <div class="card" id="verbformsIntro">
+        <p class="sentence-intro">The page 9 endings (present, imperfect, perfect) on your checklist verbs, plus sum / adsum / absum. You'll be asked what a form means, its person and tense, which verb it comes from, or to pick the right Latin for an English phrase.</p>
+        <p class="sentence-intro"><b>Tip from page 9:</b> <b>-v-</b> is the most common letter before the perfect endings (porta<b>v</b>it). Other common ones are S-U-SS-(E)-X: mi<b>s</b>it, tim<b>u</b>it, c<b>e</b>pit, di<b>x</b>it.</p>
+        <button class="primary-btn" id="startVerbformsBtn">Start</button>
+      </div>
+      <div id="verbformsPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="verbformsCounter">Question 1 / 15</span>
+          <span id="verbformsScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="verbformsProgressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label" id="verbformsLabel">What does this mean?</div>
+          <div class="sentence-latin" id="verbformsPrompt">...</div>
+          <div id="verbformsChoices"></div>
+          <div class="feedback" id="verbformsFeedback"></div>
+          <button class="primary-btn hidden" id="verbformsNextBtn">Next &rarr;</button>
+        </div>
+      </div>
+      <div id="verbformsResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="verbformsResultScore">0 / 15</div>
+          <div class="score-sub" id="verbformsResultMsg">Nice work!</div>
+          <button class="primary-btn" id="verbformsAgainBtn">Play again</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ================= DATA =================
+// Each subject has one or more "weeks". A week is either:
+//  - type "vocab": simple word/phrase <-> English pairs (existing behaviour), or
+//  - type "grammar": conjugation/declension drills, grouped by verb or noun,
+//    always tested in one direction (prompt -> the inflected form).
+// Add a future week by pushing another entry into a subject's weeks array.
+
+// Builds the present + perfect vocab items for one Latin verb, e.g.
+// V("amo","amavi",["love"],["loved"],["loved"]) gives
+//   amo   = "I love"                    (accepts "I love" / "love")
+//   amavi = "I loved / I have loved"    (accepts "I loved", "loved", "I have loved", "have loved")
+// presEn/perfEn/ppEn are parallel lists for verbs with two meanings.
+function V(pres, perf, presEn, perfEn, ppEn){
+  const out = [{
+    foreign: pres,
+    lemma: pres,
+    english: "I " + presEn.join(", "),
+    accepted: presEn.reduce((acc, e) => acc.concat(["i " + e, e]), [])
+  }];
+  if(perf){
+    out.push({
+      foreign: perf,
+      lemma: pres,
+      english: "I " + perfEn.join(", ") + " / I have " + ppEn.join(", "),
+      accepted: perfEn.reduce((acc, e) => acc.concat(["i " + e, e]), [])
+        .concat(ppEn.reduce((acc, e) => acc.concat(["i have " + e, "have " + e]), []))
+    });
+  }
+  return out;
+}
+
+// Words printed in ITALICS on the Week 3 vocab sheet (= not in checklist
+// 13). He only needs these Latin -> English. Every other checklist word
+// must be known both ways, so only those appear in English -> Latin
+// questions (and in Mixed, italic words are always asked Latin -> English).
+// Verbs are listed by their present form; their perfect follows the same rule.
+// Mixed-format rows on the sheet: "fur" (Latin italic, English not) is
+// treated as italic; "consumo" (Latin upright, English italic) as not.
+const LATIN_ITALIC = new Set([
+  "dominus","fur","pecunia","servus","villa","vir",
+  "capio","credo","dormio","exeo","intellego","invenio","laboro","respondeo","rogo",
+  "sentio","specto","sum","timeo","venio","voco",
+  "callidus","iratus","unus",
+  "e","et","in","iterum","mox","nihil","non","olim","postquam","quam","quis?","quod","sed","valde"
+]);
+
+// German full-sentence helpers.
+// DE("Ich habe ... gewohnt.", "I stayed ...", [other acceptable English])
+function DE(foreign, english, alts){
+  return [{foreign, english, accepted: [english].concat(alts || [])}];
+}
+// DID("Volleyball gespielt", "played volleyball") makes both
+// "Ich habe Volleyball gespielt." (I ...) and "Wir haben Volleyball gespielt." (We ...)
+function DID(phrase, eng, alts){
+  alts = alts || [];
+  return [
+    {foreign: "Ich habe " + phrase + ".", english: "I " + eng + ".", accepted: ["I " + eng].concat(alts.map(a => "I " + a))},
+    {foreign: "Wir haben " + phrase + ".", english: "We " + eng + ".", accepted: ["We " + eng].concat(alts.map(a => "We " + a))}
+  ];
+}
+
+const SUBJECTS = {
+  latin: {
+    name: "Latin",
+    emoji: "\u{1F3DB}\u{FE0F}",
+    defaultDirection: "foreign-english", // Latin shown, he types/picks the English
+    defaultMode: "type",
+    weeks: [
+      {
+        id: "stage13",
+        label: "Week 1",
+        sublabel: "Stage 13 vocab · due Thursday",
+        type: "vocab",
+        words: [
+          {foreign:"donum", english:"gift", accepted:["gift"]},
+          {foreign:"liber", english:"book", accepted:["book"]},
+          {foreign:"filius", english:"son", accepted:["son"]},
+          {foreign:"maritus", english:"husband", accepted:["husband"]},
+          {foreign:"canto", english:"I sing", accepted:["i sing","sing"]},
+          {foreign:"amo", english:"I love", accepted:["i love","love"]},
+          {foreign:"sedeo", english:"I sit", accepted:["i sit","sit"]},
+          {foreign:"surgo", english:"I get up", accepted:["i get up","get up"]},
+          {foreign:"sto", english:"I stand", accepted:["i stand","stand"]},
+          {foreign:"timeo", english:"I fear, I am afraid", accepted:["i fear","fear","i am afraid","afraid"]},
+          {foreign:"consumo", english:"I eat", accepted:["i eat","eat"]},
+          {foreign:"dico", english:"I say", accepted:["i say","say"]},
+          {foreign:"intellego", english:"I understand", accepted:["i understand","understand"]},
+          {foreign:"mitto", english:"I send", accepted:["i send","send"]},
+          {foreign:"traho", english:"I drag", accepted:["i drag","drag"]},
+          {foreign:"interficio", english:"I kill", accepted:["i kill","kill"]},
+          {foreign:"ceteri", english:"the others, the rest", accepted:["the others","others","the rest","the rest of"]},
+          {foreign:"fessus", english:"tired", accepted:["tired"]},
+          {foreign:"novus", english:"new", accepted:["new"]},
+          {foreign:"nullus", english:"not any, no", accepted:["not any","no","none"]},
+          {foreign:"fortiter", english:"bravely", accepted:["bravely"]},
+          {foreign:"statim", english:"immediately", accepted:["immediately"]},
+          {foreign:"subito", english:"suddenly", accepted:["suddenly"]},
+          {foreign:"tandem", english:"at last, finally", accepted:["at last","finally"]},
+          {foreign:"ubi", english:"when, where", accepted:["when","where"]},
+          {foreign:"mox", english:"soon", accepted:["soon"]},
+        ]
+      },
+      {
+        id: "tables-wk2",
+        label: "Week 2",
+        sublabel: "Noun endings & porto tables · test next Wednesday",
+        type: "grammar",
+        // Only nominative, accusative and dative are included, singular and
+        // plural — the homework sheet says to skip vocative, genitive and ablative.
+        groups: [
+          {
+            title: "Puella — 1st declension (fem.)",
+            items: [
+              {prompt:"nominative singular", answer:"puella"},
+              {prompt:"accusative singular", answer:"puellam"},
+              {prompt:"dative singular", answer:"puellae"},
+              {prompt:"nominative plural", answer:"puellae"},
+              {prompt:"accusative plural", answer:"puellas"},
+              {prompt:"dative plural", answer:"puellis"},
+            ]
+          },
+          {
+            title: "Servus — 2nd declension (masc.)",
+            items: [
+              {prompt:"nominative singular", answer:"servus"},
+              {prompt:"accusative singular", answer:"servum"},
+              {prompt:"dative singular", answer:"servo"},
+              {prompt:"nominative plural", answer:"servi"},
+              {prompt:"accusative plural", answer:"servos"},
+              {prompt:"dative plural", answer:"servis"},
+            ]
+          },
+          {
+            title: "Rex — 3rd declension",
+            note: "Only the singular was given on the sheet",
+            items: [
+              {prompt:"nominative singular", answer:"rex"},
+              {prompt:"accusative singular", answer:"regem"},
+              {prompt:"dative singular", answer:"regi"},
+            ]
+          },
+          {
+            title: "Porto — present tense",
+            items: [
+              {prompt:"I", answer:"porto", meaning:"I carry / am carrying"},
+              {prompt:"you (s)", answer:"portas", meaning:"you carry / are carrying"},
+              {prompt:"he / she / it", answer:"portat", meaning:"he/she/it carries / is carrying"},
+              {prompt:"we", answer:"portamus", meaning:"we carry / are carrying"},
+              {prompt:"you (pl)", answer:"portatis", meaning:"you (pl) carry / are carrying"},
+              {prompt:"they", answer:"portant", meaning:"they carry / are carrying"},
+            ]
+          },
+          {
+            title: "Porto — imperfect tense",
+            items: [
+              {prompt:"I", answer:"portabam", meaning:"I was carrying"},
+              {prompt:"you (s)", answer:"portabas", meaning:"you were carrying"},
+              {prompt:"he / she / it", answer:"portabat", meaning:"he/she/it was carrying"},
+              {prompt:"we", answer:"portabamus", meaning:"we were carrying"},
+              {prompt:"you (pl)", answer:"portabatis", meaning:"you (pl) were carrying"},
+              {prompt:"they", answer:"portabant", meaning:"they were carrying"},
+            ]
+          },
+          {
+            title: "Porto — perfect tense",
+            items: [
+              {prompt:"I", answer:"portavi", meaning:"I have carried"},
+              {prompt:"you (s)", answer:"portavisti", meaning:"you have carried"},
+              {prompt:"he / she / it", answer:"portavit", meaning:"he/she/it has carried"},
+              {prompt:"we", answer:"portavimus", meaning:"we have carried"},
+              {prompt:"you (pl)", answer:"portavistis", meaning:"you (pl) have carried"},
+              {prompt:"they", answer:"portaverunt", meaning:"they have carried"},
+            ]
+          },
+        ],
+        // Short sentences built only from this week's nouns/verb (plus
+        // "donum", already-known Stage 13 vocab) so the words underneath
+        // the endings actually make sense — this is closer to how CLC
+        // really tests cases (reading a sentence), not just reciting a table.
+        sentences: [
+          { latin:"servus puellam portat.", english:"The slave carries the girl.",
+            distractors:["The girl carries the slave.","The slave carried the girl.","The slave was carrying the girl."],
+            parts:[{word:"servus",kind:"case",answer:"nominative"},{word:"puellam",kind:"case",answer:"accusative"},{word:"portat",kind:"tense",answer:"present"}] },
+          { latin:"puella servum portat.", english:"The girl carries the slave.",
+            distractors:["The slave carries the girl.","The girl was carrying the slave.","The girl carries the king."],
+            parts:[{word:"puella",kind:"case",answer:"nominative"},{word:"servum",kind:"case",answer:"accusative"},{word:"portat",kind:"tense",answer:"present"}] },
+          { latin:"rex puellam portabat.", english:"The king was carrying the girl.",
+            distractors:["The girl was carrying the king.","The king carries the girl.","The king carried the girl."],
+            parts:[{word:"rex",kind:"case",answer:"nominative"},{word:"puellam",kind:"case",answer:"accusative"},{word:"portabat",kind:"tense",answer:"imperfect"}] },
+          { latin:"puella regem portabat.", english:"The girl was carrying the king.",
+            distractors:["The king was carrying the girl.","The girl carries the king.","The girl carried the king."],
+            parts:[{word:"puella",kind:"case",answer:"nominative"},{word:"regem",kind:"case",answer:"accusative"},{word:"portabat",kind:"tense",answer:"imperfect"}] },
+          { latin:"servus regem portavit.", english:"The slave carried the king.",
+            distractors:["The king carried the slave.","The slave carries the king.","The slave was carrying the king."],
+            parts:[{word:"servus",kind:"case",answer:"nominative"},{word:"regem",kind:"case",answer:"accusative"},{word:"portavit",kind:"tense",answer:"perfect"}] },
+          { latin:"rex servum portavit.", english:"The king carried the slave.",
+            distractors:["The slave carried the king.","The king carries the slave.","The king was carrying the slave."],
+            parts:[{word:"rex",kind:"case",answer:"nominative"},{word:"servum",kind:"case",answer:"accusative"},{word:"portavit",kind:"tense",answer:"perfect"}] },
+          { latin:"servus donum puellae portat.", english:"The slave carries the gift to the girl.",
+            distractors:["The girl carries the gift to the slave.","The slave carries the girl to the gift.","The slave carried the gift to the girl."],
+            parts:[{word:"servus",kind:"case",answer:"nominative"},{word:"donum",kind:"case",answer:"accusative"},{word:"puellae",kind:"case",answer:"dative"},{word:"portat",kind:"tense",answer:"present"}] },
+          { latin:"puella donum servo portabat.", english:"The girl was carrying the gift to the slave.",
+            distractors:["The slave was carrying the gift to the girl.","The girl carries the gift to the slave.","The girl was carrying the slave to the gift."],
+            parts:[{word:"puella",kind:"case",answer:"nominative"},{word:"donum",kind:"case",answer:"accusative"},{word:"servo",kind:"case",answer:"dative"},{word:"portabat",kind:"tense",answer:"imperfect"}] },
+          { latin:"rex donum puellae portavit.", english:"The king carried the gift to the girl.",
+            distractors:["The girl carried the gift to the king.","The king carries the gift to the girl.","The king carried the girl to the gift."],
+            parts:[{word:"rex",kind:"case",answer:"nominative"},{word:"donum",kind:"case",answer:"accusative"},{word:"puellae",kind:"case",answer:"dative"},{word:"portavit",kind:"tense",answer:"perfect"}] },
+          { latin:"puellae servos portant.", english:"The girls carry the slaves.",
+            distractors:["The slaves carry the girls.","The girl carries the slaves.","The girls were carrying the slaves."],
+            parts:[{word:"puellae",kind:"case",answer:"nominative"},{word:"servos",kind:"case",answer:"accusative"},{word:"portant",kind:"tense",answer:"present"}] },
+          { latin:"servi puellas portabant.", english:"The slaves were carrying the girls.",
+            distractors:["The girls were carrying the slaves.","The slaves carry the girls.","The slave was carrying the girls."],
+            parts:[{word:"servi",kind:"case",answer:"nominative"},{word:"puellas",kind:"case",answer:"accusative"},{word:"portabant",kind:"tense",answer:"imperfect"}] },
+          { latin:"rex servis donum portavit.", english:"The king carried the gift to the slaves.",
+            distractors:["The slaves carried the gift to the king.","The king carries the gift to the slaves.","The king carried the slaves to the gift."],
+            parts:[{word:"rex",kind:"case",answer:"nominative"},{word:"donum",kind:"case",answer:"accusative"},{word:"servis",kind:"case",answer:"dative"},{word:"portavit",kind:"tense",answer:"perfect"}] },
+        ]
+      },
+
+      // ---------- WEEK 3: Progress test (Week 7) prep ----------
+      // Vocab is from the test checklist, split into smaller sets so each
+      // quiz is a manageable length. Every verb appears twice: present
+      // (amo = I love) and perfect (amavi = I loved / I have loved).
+      {
+        id: "t7-nouns",
+        italics: true,
+        label: "Week 3: Nouns",
+        sublabel: "Progress test vocab",
+        type: "vocab",
+        words: [
+          {foreign:"dominus", english:"master", accepted:["master"]},
+          {foreign:"donum", english:"gift", accepted:["gift"]},
+          {foreign:"filia", english:"daughter", accepted:["daughter"]},
+          {foreign:"filius", english:"son", accepted:["son"]},
+          {foreign:"fur", english:"thief", accepted:["thief"]},
+          {foreign:"liber", english:"book", accepted:["book"]},
+          {foreign:"maritus", english:"husband", accepted:["husband"]},
+          {foreign:"pecunia", english:"money", accepted:["money"]},
+          {foreign:"regina", english:"queen", accepted:["queen"]},
+          {foreign:"rex", english:"king", accepted:["king"]},
+          {foreign:"servus", english:"slave", accepted:["slave"]},
+          {foreign:"uxor", english:"wife", accepted:["wife"]},
+          {foreign:"villa", english:"house", accepted:["house","villa"]},
+          {foreign:"vir", english:"man", accepted:["man"]},
+        ]
+      },
+      {
+        id: "t7-verbs",
+        migrateFrom: ["t7-verbs-a","t7-verbs-b"], // keep progress from the old two halves
+        italics: true,
+        label: "Week 3: Verbs",
+        sublabel: "All 28 · present & perfect tested separately",
+        type: "vocab",
+        words: [].concat(
+          V("amo","amavi",["love"],["loved"],["loved"]),
+          V("canto","cantavi",["sing"],["sang"],["sung"]),
+          V("capio","cepi",["take","capture"],["took","captured"],["taken","captured"]),
+          V("consumo","consumpsi",["eat"],["ate"],["eaten"]),
+          V("credo","credidi",["believe","trust"],["believed","trusted"],["believed","trusted"]),
+          V("dico","dixi",["say"],["said"],["said"]),
+          V("do","dedi",["give"],["gave"],["given"]),
+          V("dormio","dormivi",["sleep"],["slept"],["slept"]),
+          V("duco","duxi",["lead"],["led"],["led"]),
+          V("exeo","exii",["go out"],["went out"],["gone out"]),
+          V("intellego","intellexi",["understand"],["understood"],["understood"]),
+          V("interficio","interfeci",["kill"],["killed"],["killed"]),
+          V("invenio","inveni",["find"],["found"],["found"]),
+          V("laboro","laboravi",["work"],["worked"],["worked"]),
+          V("mitto","misi",["send"],["sent"],["sent"]),
+          V("respondeo","respondi",["reply"],["replied"],["replied"]),
+          V("rogo","rogavi",["ask"],["asked"],["asked"]),
+          V("sedeo","sedi",["sit"],["sat"],["sat"]),
+          V("sentio","sensi",["feel","notice"],["felt","noticed"],["felt","noticed"]),
+          V("specto","spectavi",["look at","watch"],["looked at","watched"],["looked at","watched"]),
+          V("sto","steti",["stand"],["stood"],["stood"]),
+          V("sum",null,["am"]),
+          V("surgo","surrexi",["get up"],["got up"],["got up"]),
+          V("timeo","timui",["fear","am afraid"],["feared","was afraid"],["feared","been afraid"]),
+          V("traho","traxi",["drag"],["dragged"],["dragged"]),
+          V("venio","veni",["come"],["came"],["come"]),
+          V("video","vidi",["see"],["saw"],["seen"]),
+          V("voco","vocavi",["call"],["called"],["called"])
+        )
+      },
+      {
+        // Checklist adjectives + the comparative / superlative forms from
+        // booklet page 8 (top third). The italics rule follows the base word:
+        // fortior / fortissimus are both ways like fortis; callidior,
+        // iratissimus etc. are Latin -> English only, like callidus / iratus.
+        id: "t7-adjectives",
+        italics: true,
+        migrateFrom: ["t7-nouns"], // adjectives used to live in the nouns set
+        label: "Week 3: Adjectives",
+        sublabel: "Checklist adjectives + brave, braver, bravest (page 8)",
+        type: "vocab",
+        words: [
+          {foreign:"callidus", english:"clever", accepted:["clever"]},
+          {foreign:"ceteri", english:"the others, the rest (of)", accepted:["the others","others","the rest","the rest of","rest"]},
+          {foreign:"fessus", english:"tired", accepted:["tired"]},
+          {foreign:"fortis", english:"brave", accepted:["brave"]},
+          {foreign:"iratus", english:"angry", accepted:["angry"]},
+          {foreign:"novus", english:"new", accepted:["new"]},
+          {foreign:"nullus", english:"not any, no", accepted:["not any","no","none"]},
+          {foreign:"omnis", english:"all", accepted:["all"]},
+          {foreign:"unus", english:"one", accepted:["one"]},
+          {foreign:"fortior", lemma:"fortis", english:"braver (than)", accepted:["braver","braver than","more brave","more brave than"]},
+          {foreign:"fortissimus", lemma:"fortis", english:"very brave, bravest", accepted:["very brave","bravest","the bravest","most brave"]},
+          {foreign:"callidior", lemma:"callidus", english:"cleverer (than)", accepted:["cleverer","cleverer than","more clever","more clever than"]},
+          {foreign:"callidissimus", lemma:"callidus", english:"very clever, cleverest", accepted:["very clever","cleverest","the cleverest","most clever"]},
+          {foreign:"iratior", lemma:"iratus", english:"angrier (than)", accepted:["angrier","angrier than","more angry","more angry than"]},
+          {foreign:"iratissimus", lemma:"iratus", english:"very angry, angriest", accepted:["very angry","angriest","the angriest","most angry"]},
+        ]
+      },
+      {
+        id: "t7-little",
+        italics: true,
+        label: "Week 3: Other words",
+        sublabel: "et, sed, tamen, ubi…",
+        type: "vocab",
+        words: [
+          {foreign:"e", english:"out of, from", accepted:["out of","from"]},
+          {foreign:"et", english:"and", accepted:["and"]},
+          {foreign:"fortiter", english:"bravely", accepted:["bravely"]},
+          {foreign:"in", english:"in", accepted:["in"]},
+          {foreign:"iterum", english:"again", accepted:["again"]},
+          {foreign:"mox", english:"soon", accepted:["soon"]},
+          {foreign:"nihil", english:"nothing", accepted:["nothing"]},
+          {foreign:"non", english:"not", accepted:["not"]},
+          {foreign:"olim", english:"once, some time ago", accepted:["once","some time ago","sometime ago"]},
+          {foreign:"postquam", english:"after", accepted:["after"]},
+          {foreign:"quam", english:"than", accepted:["than"]},
+          {foreign:"quis?", english:"who?", accepted:["who"]},
+          {foreign:"quod", english:"because", accepted:["because"]},
+          {foreign:"sed", english:"but", accepted:["but"]},
+          {foreign:"statim", english:"immediately", accepted:["immediately"]},
+          {foreign:"subito", english:"suddenly", accepted:["suddenly"]},
+          {foreign:"tamen", english:"however", accepted:["however"]},
+          {foreign:"tandem", english:"at last, finally", accepted:["at last","finally"]},
+          {foreign:"ubi", english:"when OR where", accepted:["when","where","when or where"]},
+          {foreign:"valde", english:"very much", accepted:["very much","very"]},
+        ]
+      },
+      {
+        id: "t7-grammar",
+        migrateFrom: ["t7-noun-endings","t7-verb-endings"],
+        builder: true,          // Build sentences + Bonus tabs (the default tab here)
+        hideIdentify: true,     // covered by the builder's identify step
+        hideEndings: true,      // covered by the builder's typed Latin
+        tabLabels: {flash: "Tables", quiz: "Tables quiz"},
+        label: "Week 3: English → Latin",
+        sublabel: "Build sentences, bonus, translate + endings tables",
+        type: "grammar",
+        // The four cases on the test sheet (nom, acc, gen, dat) — not
+        // vocative or ablative, which are on page 7 but not being tested.
+        groups: [
+          {
+            title: "Puella — 1st declension",
+            items: [
+              {prompt:"nominative singular", answer:"puella"},
+              {prompt:"accusative singular", answer:"puellam"},
+              {prompt:"genitive singular", answer:"puellae"},
+              {prompt:"dative singular", answer:"puellae"},
+              {prompt:"nominative plural", answer:"puellae"},
+              {prompt:"accusative plural", answer:"puellas"},
+              {prompt:"genitive plural", answer:"puellarum"},
+              {prompt:"dative plural", answer:"puellis"},
+            ]
+          },
+          {
+            title: "Servus — 2nd declension",
+            items: [
+              {prompt:"nominative singular", answer:"servus"},
+              {prompt:"accusative singular", answer:"servum"},
+              {prompt:"genitive singular", answer:"servi"},
+              {prompt:"dative singular", answer:"servo"},
+              {prompt:"nominative plural", answer:"servi"},
+              {prompt:"accusative plural", answer:"servos"},
+              {prompt:"genitive plural", answer:"servorum"},
+              {prompt:"dative plural", answer:"servis"},
+            ]
+          },
+          {
+            title: "Rex — 3rd declension",
+            items: [
+              {prompt:"nominative singular", answer:"rex"},
+              {prompt:"accusative singular", answer:"regem"},
+              {prompt:"genitive singular", answer:"regis"},
+              {prompt:"dative singular", answer:"regi"},
+              {prompt:"nominative plural", answer:"reges"},
+              {prompt:"accusative plural", answer:"reges"},
+              {prompt:"genitive plural", answer:"regum"},
+              {prompt:"dative plural", answer:"regibus"},
+            ]
+          },
+          {
+            title: "What each case does",
+            items: [
+              {prompt:"Nominative", answer:"subject (doing the action)", accepted:["subject"]},
+              {prompt:"Accusative", answer:"object (receiving the action)", accepted:["object","direct object"]},
+              {prompt:"Genitive", answer:"of / 's", accepted:["of","s","of s","of or s"]},
+              {prompt:"Dative", answer:"to / for", accepted:["to","for","to for","to or for"]},
+            ]
+          },
+        
+          {
+            title: "Porto — present tense",
+            items: [
+              {prompt:"I", answer:"porto", meaning:"I carry / am carrying"},
+              {prompt:"you (s)", answer:"portas", meaning:"you carry / are carrying"},
+              {prompt:"he / she / it", answer:"portat", meaning:"he/she/it carries / is carrying"},
+              {prompt:"we", answer:"portamus", meaning:"we carry / are carrying"},
+              {prompt:"you (pl)", answer:"portatis", meaning:"you (pl) carry / are carrying"},
+              {prompt:"they", answer:"portant", meaning:"they carry / are carrying"},
+            ]
+          },
+          {
+            title: "Porto — imperfect tense",
+            items: [
+              {prompt:"I", answer:"portabam", meaning:"I was carrying"},
+              {prompt:"you (s)", answer:"portabas", meaning:"you were carrying"},
+              {prompt:"he / she / it", answer:"portabat", meaning:"he/she/it was carrying"},
+              {prompt:"we", answer:"portabamus", meaning:"we were carrying"},
+              {prompt:"you (pl)", answer:"portabatis", meaning:"you (pl) were carrying"},
+              {prompt:"they", answer:"portabant", meaning:"they were carrying"},
+            ]
+          },
+          {
+            title: "Porto — perfect tense",
+            items: [
+              {prompt:"I", answer:"portavi", meaning:"I carried / have carried"},
+              {prompt:"you (s)", answer:"portavisti", meaning:"you carried"},
+              {prompt:"he / she / it", answer:"portavit", meaning:"he/she/it carried"},
+              {prompt:"we", answer:"portavimus", meaning:"we carried"},
+              {prompt:"you (pl)", answer:"portavistis", meaning:"you (pl) carried"},
+              {prompt:"they", answer:"portaverunt", meaning:"they carried"},
+            ]
+          },
+          {
+            title: "Sum — present",
+            items: [
+              {prompt:"I", answer:"sum", meaning:"I am"},
+              {prompt:"you (s)", answer:"es", meaning:"you are"},
+              {prompt:"he / she / it", answer:"est", meaning:"he/she/it is"},
+              {prompt:"we", answer:"sumus", meaning:"we are"},
+              {prompt:"you (pl)", answer:"estis", meaning:"you (pl) are"},
+              {prompt:"they", answer:"sunt", meaning:"they are"},
+            ]
+          },
+          {
+            title: "Sum — imperfect",
+            items: [
+              {prompt:"I", answer:"eram", meaning:"I was"},
+              {prompt:"you (s)", answer:"eras", meaning:"you were"},
+              {prompt:"he / she / it", answer:"erat", meaning:"he/she/it was"},
+              {prompt:"we", answer:"eramus", meaning:"we were"},
+              {prompt:"you (pl)", answer:"eratis", meaning:"you (pl) were"},
+              {prompt:"they", answer:"erant", meaning:"they were"},
+            ]
+          },
+          {
+            title: "Adsum — present",
+            items: [
+              {prompt:"I", answer:"adsum", meaning:"I am present"},
+              {prompt:"you (s)", answer:"ades", meaning:"you are present"},
+              {prompt:"he / she / it", answer:"adest", meaning:"he/she/it is present"},
+              {prompt:"we", answer:"adsumus", meaning:"we are present"},
+              {prompt:"you (pl)", answer:"adestis", meaning:"you (pl) are present"},
+              {prompt:"they", answer:"adsunt", meaning:"they are present"},
+            ]
+          },
+          {
+            title: "Adsum — imperfect",
+            items: [
+              {prompt:"I", answer:"aderam", meaning:"I was present"},
+              {prompt:"you (s)", answer:"aderas", meaning:"you were present"},
+              {prompt:"he / she / it", answer:"aderat", meaning:"he/she/it was present"},
+              {prompt:"we", answer:"aderamus", meaning:"we were present"},
+              {prompt:"you (pl)", answer:"aderatis", meaning:"you (pl) were present"},
+              {prompt:"they", answer:"aderant", meaning:"they were present"},
+            ]
+          },
+          {
+            title: "Absum — present",
+            items: [
+              {prompt:"I", answer:"absum", meaning:"I am absent"},
+              {prompt:"you (s)", answer:"abes", meaning:"you are absent"},
+              {prompt:"he / she / it", answer:"abest", meaning:"he/she/it is absent"},
+              {prompt:"we", answer:"absumus", meaning:"we are absent"},
+              {prompt:"you (pl)", answer:"abestis", meaning:"you (pl) are absent"},
+              {prompt:"they", answer:"absunt", meaning:"they are absent"},
+            ]
+          },
+          {
+            title: "Absum — imperfect",
+            items: [
+              {prompt:"I", answer:"aberam", meaning:"I was absent"},
+              {prompt:"you (s)", answer:"aberas", meaning:"you were absent"},
+              {prompt:"he / she / it", answer:"aberat", meaning:"he/she/it was absent"},
+              {prompt:"we", answer:"aberamus", meaning:"we were absent"},
+              {prompt:"you (pl)", answer:"aberatis", meaning:"you (pl) were absent"},
+              {prompt:"they", answer:"aberant", meaning:"they were absent"},
+            ]
+          },
+        ],
+        // Identify uses the grammar booklet's page 7 wording for the four cases
+        caseMeanings: {
+          nominative: "Nominative — subject (the person/thing doing the action)",
+          accusative: "Accusative — object (receiving the action)",
+          genitive: "Genitive — “of …” / “…’s”",
+          dative: "Dative — “to” / “for”"
+        },
+        // Every form of each word used below, for the Endings mode
+        // (pick the right ending, like Section B of the test).
+        forms: {
+          fur: ["fur","furem","furis","furi","fures","furum","furibus"],
+          pecunia: ["pecunia","pecuniam","pecuniae","pecunias","pecuniarum","pecuniis"],
+          dominus: ["dominus","dominum","domini","domino","dominos","dominorum","dominis"],
+          regina: ["regina","reginam","reginae","reginas","reginarum","reginis"],
+          filia: ["filia","filiam","filiae","filias","filiarum"],
+          donum: ["donum","doni","dono","dona","donorum","donis"],
+          servus: ["servus","servum","servi","servo","servos","servorum","servis"],
+          liber: ["liber","librum","libri","libro","libros","librorum","libris"],
+          rex: ["rex","regem","regis","regi","reges","regum","regibus"],
+          uxor: ["uxor","uxorem","uxoris","uxori","uxores","uxorum","uxoribus"],
+          maritus: ["maritus","maritum","mariti","marito","maritos","maritorum","maritis"],
+          filius: ["filius","filium","filii","filio","filios","filiis"],
+          vir: ["vir","virum","viri","viro","viros","virorum","viris"],
+          capio: ["capit","capiunt","capiebat","capiebant","cepit","ceperunt"],
+          do: ["dat","dant","dabat","dabant","dedit","dederunt"],
+          porto: ["portat","portant","portabat","portabant","portavit","portaverunt"],
+          sum: ["est","sunt","erat","erant"],
+          voco: ["vocat","vocant","vocabat","vocabant","vocavit","vocaverunt"],
+          specto: ["spectat","spectant","spectabat","spectabant","spectavit","spectaverunt"],
+          video: ["videt","vident","videbat","videbant","vidit","viderunt"],
+          credo: ["credit","credunt","credebat","credebant","credidit","crediderunt"],
+          respondeo: ["respondet","respondent","respondebat","respondebant","respondit","responderunt"],
+          traho: ["trahit","trahunt","trahebat","trahebant","traxit","traxerunt"],
+        },
+        sentences: [
+          { latin:"fur pecuniam domini cepit.", english:"The thief took the master's money.",
+            distractors:["The master took the thief's money.","The thief takes the master's money.","The thief was taking the master's money."],
+            parts:[{word:"fur",lemma:"fur",kind:"case",answer:"nominative"},{word:"pecuniam",lemma:"pecunia",kind:"case",answer:"accusative"},{word:"domini",lemma:"dominus",kind:"case",answer:"genitive"},{word:"cepit",lemma:"capio",kind:"tense",answer:"perfect"}] },
+          { latin:"regina filiae donum dedit.", english:"The queen gave a gift to the daughter.",
+            distractors:["The daughter gave a gift to the queen.","The queen gives a gift to the daughter.","The queen was giving a gift to the daughter."],
+            parts:[{word:"regina",lemma:"regina",kind:"case",answer:"nominative"},{word:"filiae",lemma:"filia",kind:"case",answer:"dative"},{word:"donum",lemma:"donum",kind:"case",answer:"accusative"},{word:"dedit",lemma:"do",kind:"tense",answer:"perfect"}] },
+          { latin:"servus librum regis portabat.", english:"The slave was carrying the king's book.",
+            distractors:["The king was carrying the slave's book.","The slave carried the king's book.","The slave was carrying the book to the king."],
+            parts:[{word:"servus",lemma:"servus",kind:"case",answer:"nominative"},{word:"librum",lemma:"liber",kind:"case",answer:"accusative"},{word:"regis",lemma:"rex",kind:"case",answer:"genitive"},{word:"portabat",lemma:"porto",kind:"tense",answer:"imperfect"}] },
+          { latin:"uxor mariti fessa erat.", english:"The husband's wife was tired.",
+            distractors:["The wife's husband was tired.","The husband's wife is tired.","The husband's wife was angry."],
+            parts:[{word:"uxor",lemma:"uxor",kind:"case",answer:"nominative"},{word:"mariti",lemma:"maritus",kind:"case",answer:"genitive"},{word:"erat",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"dominus servos vocavit.", english:"The master called the slaves.",
+            distractors:["The slaves called the master.","The master calls the slaves.","The master called the slave."],
+            parts:[{word:"dominus",lemma:"dominus",kind:"case",answer:"nominative"},{word:"servos",lemma:"servus",kind:"case",answer:"accusative"},{word:"vocavit",lemma:"voco",kind:"tense",answer:"perfect"}] },
+          { latin:"filius regis pecuniam servis dedit.", english:"The king's son gave money to the slaves.",
+            distractors:["The king's son gave money to the slave.","The king's son gives money to the slaves.","The slaves gave money to the king's son."],
+            parts:[{word:"filius",lemma:"filius",kind:"case",answer:"nominative"},{word:"regis",lemma:"rex",kind:"case",answer:"genitive"},{word:"pecuniam",lemma:"pecunia",kind:"case",answer:"accusative"},{word:"servis",lemma:"servus",kind:"case",answer:"dative"},{word:"dedit",lemma:"do",kind:"tense",answer:"perfect"}] },
+          { latin:"reges filias reginae spectabant.", english:"The kings were watching the queen's daughters.",
+            distractors:["The queen's daughters were watching the kings.","The king was watching the queen's daughters.","The kings watched the queen's daughters."],
+            parts:[{word:"reges",lemma:"rex",kind:"case",answer:"nominative"},{word:"filias",lemma:"filia",kind:"case",answer:"accusative"},{word:"reginae",lemma:"regina",kind:"case",answer:"genitive"},{word:"spectabant",lemma:"specto",kind:"tense",answer:"imperfect"}] },
+          { latin:"fures pecuniam regum ceperunt.", english:"The thieves took the kings' money.",
+            distractors:["The kings took the thieves' money.","The thieves take the kings' money.","The thief took the king's money."],
+            parts:[{word:"fures",lemma:"fur",kind:"case",answer:"nominative"},{word:"pecuniam",lemma:"pecunia",kind:"case",answer:"accusative"},{word:"regum",lemma:"rex",kind:"case",answer:"genitive"},{word:"ceperunt",lemma:"capio",kind:"tense",answer:"perfect"}] },
+          { latin:"vir callidus fures vidit.", english:"The clever man saw the thieves.",
+            distractors:["The thieves saw the clever man.","The clever man sees the thieves.","The clever man saw the thief."],
+            parts:[{word:"vir",lemma:"vir",kind:"case",answer:"nominative"},{word:"fures",lemma:"fur",kind:"case",answer:"accusative"},{word:"vidit",lemma:"video",kind:"tense",answer:"perfect"}] },
+          { latin:"servi domino non crediderunt.", english:"The slaves did not trust the master.",
+            distractors:["The master did not trust the slaves.","The slaves do not trust the master.","The slave did not trust the master."],
+            parts:[{word:"servi",lemma:"servus",kind:"case",answer:"nominative"},{word:"domino",lemma:"dominus",kind:"case",answer:"dative"},{word:"crediderunt",lemma:"credo",kind:"tense",answer:"perfect"}] },
+          { latin:"uxor marito librum dedit.", english:"The wife gave a book to the husband.",
+            distractors:["The husband gave a book to the wife.","The wife gives a book to the husband.","The wife was giving a book to the husband."],
+            parts:[{word:"uxor",lemma:"uxor",kind:"case",answer:"nominative"},{word:"marito",lemma:"maritus",kind:"case",answer:"dative"},{word:"librum",lemma:"liber",kind:"case",answer:"accusative"},{word:"dedit",lemma:"do",kind:"tense",answer:"perfect"}] },
+          { latin:"regina servo respondit.", english:"The queen replied to the slave.",
+            distractors:["The slave replied to the queen.","The queen replies to the slave.","The queen was replying to the slave."],
+            parts:[{word:"regina",lemma:"regina",kind:"case",answer:"nominative"},{word:"servo",lemma:"servus",kind:"case",answer:"dative"},{word:"respondit",lemma:"respondeo",kind:"tense",answer:"perfect"}] },
+          { latin:"servus filium domini traxit.", english:"The slave dragged the master's son.",
+            distractors:["The master's son dragged the slave.","The slave drags the master's son.","The slave was dragging the master's son."],
+            parts:[{word:"servus",lemma:"servus",kind:"case",answer:"nominative"},{word:"filium",lemma:"filius",kind:"case",answer:"accusative"},{word:"domini",lemma:"dominus",kind:"case",answer:"genitive"},{word:"traxit",lemma:"traho",kind:"tense",answer:"perfect"}] },
+          { latin:"servi regis fessi erant.", english:"The king's slaves were tired.",
+            distractors:["The king's slave was tired.","The king's slaves are tired.","The slaves' king was tired."],
+            parts:[{word:"servi",lemma:"servus",kind:"case",answer:"nominative"},{word:"regis",lemma:"rex",kind:"case",answer:"genitive"},{word:"erant",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"filiae reginae donum regi dederunt.", english:"The queen's daughters gave a gift to the king.",
+            distractors:["The queen's daughter gave a gift to the king.","The king's daughters gave a gift to the queen.","The queen's daughters give a gift to the king."],
+            parts:[{word:"filiae",lemma:"filia",kind:"case",answer:"nominative"},{word:"reginae",lemma:"regina",kind:"case",answer:"genitive"},{word:"donum",lemma:"donum",kind:"case",answer:"accusative"},{word:"regi",lemma:"rex",kind:"case",answer:"dative"},{word:"dederunt",lemma:"do",kind:"tense",answer:"perfect"}] },
+        
+          { latin:"servus fortior quam dominus erat.", english:"The slave was braver than the master.",
+            distractors:["The master was braver than the slave.","The slave was very brave.","The slave is braver than the master."],
+            parts:[{word:"servus",lemma:"servus",kind:"case",answer:"nominative"},{word:"fortior",lemma:"fortis",kind:"degree",answer:"comparative"},{word:"dominus",lemma:"dominus",kind:"case",answer:"nominative"},{word:"erat",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"rex iratissimus erat.", english:"The king was very angry.",
+            distractors:["The king was angrier.","The king was angry.","The king is very angry."],
+            parts:[{word:"rex",lemma:"rex",kind:"case",answer:"nominative"},{word:"iratissimus",lemma:"iratus",kind:"degree",answer:"superlative"},{word:"erat",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"fur callidior quam vir erat.", english:"The thief was cleverer than the man.",
+            distractors:["The man was cleverer than the thief.","The thief was very clever.","The thief is cleverer than the man."],
+            parts:[{word:"fur",lemma:"fur",kind:"case",answer:"nominative"},{word:"callidior",lemma:"callidus",kind:"degree",answer:"comparative"},{word:"vir",lemma:"vir",kind:"case",answer:"nominative"}] },
+          { latin:"regina callidissima erat.", english:"The queen was very clever.",
+            distractors:["The queen was cleverer.","The queen was clever.","The queen is very clever."],
+            parts:[{word:"regina",lemma:"regina",kind:"case",answer:"nominative"},{word:"callidissima",lemma:"callidus",kind:"degree",answer:"superlative"},{word:"erat",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"dominus servos fortissimos vocavit.", english:"The master called the very brave slaves.",
+            distractors:["The master called the braver slaves.","The very brave slaves called the master.","The master calls the very brave slaves."],
+            parts:[{word:"dominus",lemma:"dominus",kind:"case",answer:"nominative"},{word:"servos",lemma:"servus",kind:"case",answer:"accusative"},{word:"fortissimos",lemma:"fortis",kind:"degree",answer:"superlative"},{word:"fortissimos",kind:"case",answer:"accusative",agrees:"servos"},{word:"vocavit",lemma:"voco",kind:"tense",answer:"perfect"}] },
+          { latin:"uxor iratior quam maritus erat.", english:"The wife was angrier than the husband.",
+            distractors:["The husband was angrier than the wife.","The wife was very angry.","The wife is angrier than the husband."],
+            parts:[{word:"uxor",lemma:"uxor",kind:"case",answer:"nominative"},{word:"iratior",lemma:"iratus",kind:"degree",answer:"comparative"},{word:"maritus",lemma:"maritus",kind:"case",answer:"nominative"}] },
+          { latin:"filia regis fortissima erat.", english:"The king's daughter was very brave.",
+            distractors:["The king's daughter was braver.","The daughter's king was very brave.","The king's daughter is very brave."],
+            parts:[{word:"filia",lemma:"filia",kind:"case",answer:"nominative"},{word:"regis",lemma:"rex",kind:"case",answer:"genitive"},{word:"fortissima",lemma:"fortis",kind:"degree",answer:"superlative"},{word:"erat",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"vir fortis furem cepit.", english:"The brave man captured the thief.",
+            distractors:["The braver man captured the thief.","The thief captured the brave man.","The very brave man captured the thief."],
+            parts:[{word:"vir",lemma:"vir",kind:"case",answer:"nominative"},{word:"fortis",lemma:"fortis",kind:"degree",answer:"positive"},{word:"furem",lemma:"fur",kind:"case",answer:"accusative"},{word:"cepit",lemma:"capio",kind:"tense",answer:"perfect"}] },
+          { latin:"rex callidus fures vidit.", english:"The clever king saw the thieves.",
+            distractors:["The very clever king saw the thieves.","The cleverer king saw the thieves.","The thieves saw the clever king."],
+            parts:[{word:"rex",lemma:"rex",kind:"case",answer:"nominative"},{word:"callidus",lemma:"callidus",kind:"degree",answer:"positive"},{word:"fures",lemma:"fur",kind:"case",answer:"accusative"},{word:"vidit",lemma:"video",kind:"tense",answer:"perfect"}] },
+          { latin:"regina fortior quam rex erat.", english:"The queen was braver than the king.",
+            distractors:["The king was braver than the queen.","The queen was very brave.","The queen is braver than the king."],
+            parts:[{word:"regina",lemma:"regina",kind:"case",answer:"nominative"},{word:"fortior",lemma:"fortis",kind:"degree",answer:"comparative"},{word:"rex",lemma:"rex",kind:"case",answer:"nominative"},{word:"erat",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"servi iratissimi erant.", english:"The slaves were very angry.",
+            distractors:["The slave was very angry.","The slaves were angrier.","The slaves are very angry."],
+            parts:[{word:"servi",lemma:"servus",kind:"case",answer:"nominative"},{word:"iratissimi",lemma:"iratus",kind:"degree",answer:"superlative"},{word:"erant",lemma:"sum",kind:"tense",answer:"imperfect"}] },
+          { latin:"fures callidissimi pecuniam ceperunt.", english:"The very clever thieves took the money.",
+            distractors:["The cleverer thieves took the money.","The very clever thief took the money.","The very clever thieves take the money."],
+            parts:[{word:"fures",lemma:"fur",kind:"case",answer:"nominative"},{word:"callidissimi",lemma:"callidus",kind:"degree",answer:"superlative"},{word:"pecuniam",lemma:"pecunia",kind:"case",answer:"accusative"},{word:"ceperunt",lemma:"capio",kind:"tense",answer:"perfect"}] },
+        ]
+      }
+    ]
+  },
+  french: {
+    name: "French",
+    emoji: "\u{1F1EB}\u{1F1F7}",
+    defaultDirection: "english-foreign", // English shown, he types/picks the French
+    defaultMode: "type",
+    strictAccents: true, // typed French answers must have the right accents to count as correct
+    accentHint: "Nearly — check the accents (é, è, ê, à, ç…).",
+    typeTip: "iPad tip: hold down a letter (e, a, c…) to get é, è, ê, à, ç.",
+    weeks: [
+      {
+        id: "week1",
+        label: "Week 1",
+        sublabel: "Qui, Quand, weather phrases · due Thursday",
+        type: "vocab",
+        words: [
+          {foreign:"Qui", english:"who", accepted:["who"]},
+          {foreign:"Quand", english:"when", accepted:["when"]},
+          {foreign:"Comment", english:"how", accepted:["how"]},
+          {foreign:"Qu'est-ce que", english:"what is it that", accepted:["what is it that","what"]},
+          {foreign:"Est-ce que", english:"is it that", accepted:["is it that"]},
+          {foreign:"Il y a des orages", english:"it's stormy", accepted:["it's stormy","its stormy","stormy"]},
+          {foreign:"Il y a du soleil", english:"it's sunny", accepted:["it's sunny","its sunny","sunny"]},
+          {foreign:"Il fait mauvais", english:"it's bad weather", accepted:["it's bad weather","its bad weather","bad weather"]},
+          {foreign:"Il gèle", english:"it's freezing", accepted:["it's freezing","its freezing","freezing"]},
+          {foreign:"Il grêle", english:"it's hailing", accepted:["it's hailing","its hailing","hailing"]},
+        ]
+      },
+      {
+        id: "verbs-wk2",
+        label: "Week 2",
+        sublabel: "Pouvoir, devoir, vouloir, falloir · test next lesson",
+        type: "grammar",
+        // No French shown anywhere in the prompt — not the infinitive, not
+        // the pronoun (that's what hideGroup does below). He's given only
+        // the English and has to produce the whole French phrase himself,
+        // pronoun included — matching how the teacher will actually test it.
+        // Pronouns follow the sheet exactly: "Ils", never "Ils/elles".
+        hideGroup: true,
+        groups: [
+          {
+            title: "Pouvoir",
+            items: [
+              {prompt:"I can", answer:"Je peux", accepted:["je peux"]},
+              {prompt:"You (informal) can", answer:"Tu peux", accepted:["tu peux"]},
+              {prompt:"He / she / it can", answer:"Il/elle/on peut", accepted:["il peut","elle peut","on peut"]},
+              {prompt:"We can", answer:"Nous pouvons", accepted:["nous pouvons"]},
+              {prompt:"You (plural/formal) can", answer:"Vous pouvez", accepted:["vous pouvez"]},
+              {prompt:"They can", answer:"Ils peuvent", accepted:["ils peuvent"]},
+            ]
+          },
+          {
+            title: "Devoir",
+            items: [
+              {prompt:"I must", answer:"Je dois", accepted:["je dois"]},
+              {prompt:"You (informal) must", answer:"Tu dois", accepted:["tu dois"]},
+              {prompt:"He / she / it must", answer:"Il/elle/on doit", accepted:["il doit","elle doit","on doit"]},
+              {prompt:"We must", answer:"Nous devons", accepted:["nous devons"]},
+              {prompt:"You (plural/formal) must", answer:"Vous devez", accepted:["vous devez"]},
+              {prompt:"They must", answer:"Ils doivent", accepted:["ils doivent"]},
+            ]
+          },
+          {
+            title: "Vouloir",
+            items: [
+              {prompt:"I want to", answer:"Je veux", accepted:["je veux"]},
+              {prompt:"You (informal) want to", answer:"Tu veux", accepted:["tu veux"]},
+              {prompt:"He / she / it wants to", answer:"Il/elle/on veut", accepted:["il veut","elle veut","on veut"]},
+              {prompt:"We want to", answer:"Nous voulons", accepted:["nous voulons"]},
+              {prompt:"You (plural/formal) want to", answer:"Vous voulez", accepted:["vous voulez"]},
+              {prompt:"They want to", answer:"Ils veulent", accepted:["ils veulent"]},
+            ]
+          },
+          {
+            title: "Falloir",
+            note: "This verb only has one form",
+            items: [
+              {prompt:"It is necessary to / one must", answer:"Il faut", accepted:["il faut"]},
+            ]
+          },
+        ]
+      },
+      {
+        id: "week3",
+        label: "Week 3",
+        sublabel: "Shops · test next Wednesday",
+        type: "vocab",
+        words: [
+          {foreign:"Magasins", english:"shops", accepted:["shops","shop"]},
+          {foreign:"Boucherie", english:"butchers", accepted:["butchers","the butchers","butcher's"]},
+          {foreign:"Un chariot", english:"a trolley", accepted:["a trolley","trolley"]},
+          {foreign:"Le marché", english:"the market", accepted:["the market","market"]},
+          {foreign:"Le supermarché", english:"the supermarket", accepted:["the supermarket","supermarket"]},
+          {foreign:"Une patisserie", english:"a cake shop", accepted:["a cake shop","cake shop"]},
+          {foreign:"Une boulangerie", english:"a bakery", accepted:["a bakery","bakery"]},
+          {foreign:"L'épicerie", english:"corner shop", accepted:["corner shop","the corner shop"]},
+          {foreign:"Une fromagerie", english:"a cheese shop", accepted:["a cheese shop","cheese shop"]},
+          {foreign:"Une poissonnerie", english:"a fishmongers", accepted:["a fishmongers","fishmongers","a fishmonger's","fishmonger's"]},
+        ]
+      }
+    ]
+  },
+  german: {
+    name: "German",
+    emoji: "\u{1F1E9}\u{1F1EA}",
+    defaultDirection: "english-foreign", // English shown, he types/picks the German
+    defaultMode: "type",
+    strictAccents: true, // umlauts and ß must be right
+    strictCase: true,    // nouns must have their capital letter (first letter of the sentence is free)
+    accentHint: "Nearly — check the umlauts (ä, ö, ü) and ß.",
+    caseHint: "Nearly — German nouns need a capital letter.",
+    bothHint: "Nearly — check the umlauts/ß and the capital letters.",
+    typeTip: "iPad tip: hold down a, o or u for ä, ö, ü — and s for ß. Nouns need a capital letter.",
+    weeks: [
+      {
+        // Labelled by date rather than "Week 1". Only the three boxes he
+        // has to learn: Wo hast du gewohnt? / Was hast du gemacht? /
+        // Wie bist du gefahren? — tested as full sentences. "Wir haben"
+        // is used only where the sheet gives it (the "What did you do?" box).
+        id: "2026-10-10",
+        label: "10 October",
+        sublabel: "Holidays: where you stayed, what you did, how you travelled",
+        type: "vocab",
+        words: [].concat(
+          // Wo hast du gewohnt? — Where did you stay?
+          DE("Ich habe in einem Hotel gewohnt.", "I stayed in a hotel."),
+          DE("Ich habe in einem Ferienhaus gewohnt.", "I stayed in a holiday house.", ["I stayed in a holiday home"]),
+          DE("Ich habe in einem Wohnwagen gewohnt.", "I stayed in a caravan."),
+          DE("Ich habe in einer Jugendherberge gewohnt.", "I stayed in a youth hostel."),
+          DE("Ich habe auf einem Campingplatz gewohnt.", "I stayed on a campsite.", ["I stayed at a campsite"]),
+          DE("Ich habe bei Freunden gewohnt.", "I stayed with friends."),
+          // Was hast du gemacht? — What did you do? (Ich habe / Wir haben)
+          DID("viele Sachen gemacht", "did a lot of things", ["did lots of things","did many things"]),
+          DID("Musik gehört", "listened to music"),
+          DID("Volleyball gespielt", "played volleyball"),
+          DID("einen Bootsausflug gemacht", "did a boat trip", ["went on a boat trip","took a boat trip","had a boat trip"]),
+          DID("viele Souvenirs gekauft", "bought lots of souvenirs", ["bought a lot of souvenirs","bought many souvenirs"]),
+          DID("viel Fisch gegessen", "ate lots of fish", ["ate a lot of fish"]),
+          DID("die Kirche gesehen", "saw the church"),
+          DID("ein Buch gelesen", "read a book"),
+          DE("Ich bin zu Hause geblieben.", "I stayed at home.", ["I stayed home"]),
+          // Wie bist du gefahren? — How did you travel?
+          DE("Ich bin mit dem Auto gefahren.", "I travelled by car.", ["I traveled by car","I went by car"]),
+          DE("Ich bin mit dem Reisebus gefahren.", "I travelled by coach.", ["I traveled by coach","I went by coach"]),
+          DE("Ich bin mit dem Schiff gefahren.", "I travelled by boat.", ["I traveled by boat","I went by boat","I travelled by ship","I traveled by ship","I went by ship"]),
+          DE("Ich bin geflogen.", "I flew."),
+          DE("Ich bin zu Fuß gegangen.", "I walked.", ["I went on foot"])
+        )
+      }
+    ]
+  }
+};
+
+// ================= VERB FORMS (Week 3 "Verb forms" tab) =================
+// Applies the page 9 endings (present / imperfect / perfect — no
+// pluperfect) to the checklist verbs, plus page 10's sum / adsum / absum
+// (present & imperfect only). exeo is left out: it's irregular and its
+// table isn't in the booklet pages being tested.
+// en = [base, he-form, -ing form, past]
+const VERB_DEFS = [
+  {lemma:"amo", conj:1, stem:"am", perf:"amav", en:["love","loves","loving","loved"]},
+  {lemma:"canto", conj:1, stem:"cant", perf:"cantav", en:["sing","sings","singing","sang"]},
+  {lemma:"do", conj:1, stem:"d", perf:"ded", en:["give","gives","giving","gave"]},
+  {lemma:"laboro", conj:1, stem:"labor", perf:"laborav", en:["work","works","working","worked"]},
+  {lemma:"porto", conj:1, stem:"port", perf:"portav", en:["carry","carries","carrying","carried"]},
+  {lemma:"rogo", conj:1, stem:"rog", perf:"rogav", en:["ask","asks","asking","asked"]},
+  {lemma:"specto", conj:1, stem:"spect", perf:"spectav", en:["watch","watches","watching","watched"]},
+  {lemma:"sto", conj:1, stem:"st", perf:"stet", en:["stand","stands","standing","stood"]},
+  {lemma:"voco", conj:1, stem:"voc", perf:"vocav", en:["call","calls","calling","called"]},
+  {lemma:"respondeo", conj:2, stem:"respond", perf:"respond", en:["reply","replies","replying","replied"]},
+  {lemma:"sedeo", conj:2, stem:"sed", perf:"sed", en:["sit","sits","sitting","sat"]},
+  {lemma:"timeo", conj:2, stem:"tim", perf:"timu", en:["fear","fears","fearing","feared"]},
+  {lemma:"video", conj:2, stem:"vid", perf:"vid", en:["see","sees","seeing","saw"]},
+  {lemma:"consumo", conj:3, stem:"consum", perf:"consumps", en:["eat","eats","eating","ate"]},
+  {lemma:"credo", conj:3, stem:"cred", perf:"credid", en:["believe","believes","believing","believed"]},
+  {lemma:"dico", conj:3, stem:"dic", perf:"dix", en:["say","says","saying","said"]},
+  {lemma:"duco", conj:3, stem:"duc", perf:"dux", en:["lead","leads","leading","led"]},
+  {lemma:"intellego", conj:3, stem:"intelleg", perf:"intellex", en:["understand","understands","understanding","understood"]},
+  {lemma:"mitto", conj:3, stem:"mitt", perf:"mis", en:["send","sends","sending","sent"]},
+  {lemma:"surgo", conj:3, stem:"surg", perf:"surrex", en:["get up","gets up","getting up","got up"]},
+  {lemma:"traho", conj:3, stem:"trah", perf:"trax", en:["drag","drags","dragging","dragged"]},
+  {lemma:"capio", conj:"3io", stem:"cap", perf:"cep", en:["take","takes","taking","took"]},
+  {lemma:"interficio", conj:"3io", stem:"interfic", perf:"interfec", en:["kill","kills","killing","killed"]},
+  {lemma:"dormio", conj:4, stem:"dorm", perf:"dormiv", en:["sleep","sleeps","sleeping","slept"]},
+  {lemma:"invenio", conj:4, stem:"inven", perf:"inven", en:["find","finds","finding","found"]},
+  {lemma:"sentio", conj:4, stem:"sent", perf:"sens", en:["feel","feels","feeling","felt"]},
+  {lemma:"venio", conj:4, stem:"ven", perf:"ven", en:["come","comes","coming","came"]},
+  {lemma:"sum", irregular:{present:["sum","es","est","sumus","estis","sunt"], imperfect:["eram","eras","erat","eramus","eratis","erant"]}, beSuffix:""},
+  {lemma:"adsum", irregular:{present:["adsum","ades","adest","adsumus","adestis","adsunt"], imperfect:["aderam","aderas","aderat","aderamus","aderatis","aderant"]}, beSuffix:" present"},
+  {lemma:"absum", irregular:{present:["absum","abes","abest","absumus","abestis","absunt"], imperfect:["aberam","aberas","aberat","aberamus","aberatis","aberant"]}, beSuffix:" absent"},
+];
+const VF_PRESENT = {1:["o","as","at","amus","atis","ant"], 2:["eo","es","et","emus","etis","ent"], 3:["o","is","it","imus","itis","unt"], "3io":["io","is","it","imus","itis","iunt"], 4:["io","is","it","imus","itis","iunt"]};
+const VF_IMPERFECT_VOWEL = {1:"a", 2:"e", 3:"e", "3io":"ie", 4:"ie"};
+const VF_IMPF_ENDINGS = ["bam","bas","bat","bamus","batis","bant"];
+const VF_PERFECT = ["i","isti","it","imus","istis","erunt"];
+const VF_PRONOUNS = ["I","you (sg)","he/she/it","we","you (pl)","they"];
+const VF_PERSON_LABELS = ["1st person singular (I)","2nd person singular (you sg.)","3rd person singular (he/she/it)","1st person plural (we)","2nd person plural (you pl.)","3rd person plural (they)"];
+const VF_BE_PRESENT = ["am","are","is","are","are","are"];
+const VF_BE_PAST = ["was","were","was","were","were","were"];
+
+// Every (verb, tense, person) cell with its Latin form and English
+// translation. Any Latin spelling that appears in two cells of the same
+// verb (e.g. venit = "comes" AND "came") is dropped, so no question is
+// ever ambiguous.
+function buildVerbCells(){
+  const cells = [];
+  VERB_DEFS.forEach(v=>{
+    const mine = [];
+    if(v.irregular){
+      ["present","imperfect"].forEach(tense=>{
+        v.irregular[tense].forEach((latin, i)=>{
+          const be = tense === "present" ? VF_BE_PRESENT[i] : VF_BE_PAST[i];
+          mine.push({lemma:v.lemma, tense, person:i, latin, english: VF_PRONOUNS[i] + " " + be + v.beSuffix});
+        });
+      });
+    } else {
+      const [base, s3, ing, past] = v.en;
+      VF_PRESENT[v.conj].forEach((end, i)=>{
+        mine.push({lemma:v.lemma, tense:"present", person:i, latin: v.stem + end,
+          english: VF_PRONOUNS[i] + " " + (i === 2 ? s3 : base)});
+      });
+      VF_IMPF_ENDINGS.forEach((end, i)=>{
+        mine.push({lemma:v.lemma, tense:"imperfect", person:i, latin: v.stem + VF_IMPERFECT_VOWEL[v.conj] + end,
+          english: VF_PRONOUNS[i] + " " + VF_BE_PAST[i] + " " + ing});
+      });
+      VF_PERFECT.forEach((end, i)=>{
+        mine.push({lemma:v.lemma, tense:"perfect", person:i, latin: v.perf + end,
+          english: VF_PRONOUNS[i] + " " + past});
+      });
+    }
+    const count = {};
+    mine.forEach(c => count[c.latin] = (count[c.latin]||0) + 1);
+    mine.forEach(c => { if(count[c.latin] === 1) cells.push(c); });
+  });
+  return cells;
+}
+const VERB_CELLS = buildVerbCells();
+
+function latinVerbForm(def, tense, p){
+  if(def.irregular) return def.irregular[tense][p];
+  if(tense === "present") return def.stem + VF_PRESENT[def.conj][p];
+  if(tense === "imperfect") return def.stem + VF_IMPERFECT_VOWEL[def.conj] + VF_IMPF_ENDINGS[p];
+  return def.perf + VF_PERFECT[p];
+}
+
+// ================= SENTENCE BUILDER (English -> Latin) =================
+// Random sentences that are fair for the test: nouns only from the 1st,
+// 2nd and 3rd declensions on the sheet, only the four tested cases
+// (nom / acc / gen / dat), regular verbs plus sum / adsum / absum, and
+// only combinations that make sense (people do things; things are taken,
+// given, found...). Each lemma appears at most once per sentence.
+const SB_NOUNS = {
+  dominus: {entry:"dominus", mean:"master", en:["master","masters"], poss:["master's","masters'"], decl:2, g:"m", person:true},
+  filia:   {entry:"filia", mean:"daughter", en:["daughter","daughters"], poss:["daughter's","daughters'"], decl:1, g:"f", person:true},
+  filius:  {entry:"filius", mean:"son", en:["son","sons"], poss:["son's","sons'"], decl:2, g:"m", person:true},
+  fur:     {entry:"fur, fur-", mean:"thief", en:["thief","thieves"], poss:["thief's","thieves'"], decl:3, g:"m", person:true, nomSg:"fur", stem:"fur"},
+  maritus: {entry:"maritus", mean:"husband", en:["husband","husbands"], poss:["husband's","husbands'"], decl:2, g:"m", person:true},
+  regina:  {entry:"regina", mean:"queen", en:["queen","queens"], poss:["queen's","queens'"], decl:1, g:"f", person:true},
+  rex:     {entry:"rex, reg-", mean:"king", en:["king","kings"], poss:["king's","kings'"], decl:3, g:"m", person:true, nomSg:"rex", stem:"reg"},
+  servus:  {entry:"servus", mean:"slave", en:["slave","slaves"], poss:["slave's","slaves'"], decl:2, g:"m", person:true},
+  uxor:    {entry:"uxor", mean:"wife", en:["wife","wives"], poss:["wife's","wives'"], decl:3, g:"f", person:true, nomSg:"uxor", stem:"uxor"},
+  vir:     {entry:"vir", mean:"man", en:["man","men"], poss:["man's","men's"], decl:2, g:"m", person:true, nomSg:"vir", stem:"vir"},
+  donum:   {entry:"donum", mean:"gift", en:["gift"], decl:2, g:"n", neuter:true, sgOnly:true},
+  liber:   {entry:"liber, libr-", mean:"book", en:["book","books"], decl:2, g:"m", nomSg:"liber", stem:"libr"},
+  pecunia: {entry:"pecunia", mean:"money", en:["money"], decl:1, g:"f", sgOnly:true},
+  villa:   {entry:"villa", mean:"house", en:["house","houses"], decl:1, g:"f"},
+};
+const SB_PEOPLE = ["dominus","filia","filius","fur","maritus","regina","rex","servus","uxor","vir"];
+const SB_ENDINGS = {
+  1:   [["a","am","ae","ae"],["ae","as","arum","is"]],
+  2:   [["us","um","i","o"],["i","os","orum","is"]],
+  "2n":[["um","um","i","o"],["a","a","orum","is"]],
+  3:   [["","em","is","i"],["es","es","um","ibus"]],
+};
+const SB_CASES = ["nom","acc","gen","dat"];
+const SB_CASE_NAMES = {nom:"nominative", acc:"accusative", gen:"genitive", dat:"dative"};
+function sbNounForm(lemma, kase, num){
+  const n = SB_NOUNS[lemma];
+  const ci = SB_CASES.indexOf(kase);
+  if(num === 0 && ci === 0 && n.nomSg) return n.nomSg;
+  const stem = n.stem || lemma.replace(/(us|um|a)$/, "");
+  return stem + SB_ENDINGS[n.neuter ? "2n" : n.decl][num][ci];
+}
+// Who can sensibly "own" whom (people) — anyone can own a thing.
+const SB_POSSESSORS = {
+  filius: ["rex","regina","dominus","vir","fur"],
+  filia:  ["rex","regina","dominus","vir","fur"],
+  servus: ["rex","regina","dominus"],
+  uxor:   ["rex","dominus","vir","fur"],
+  maritus:["regina","filia"],
+  donum: SB_PEOPLE, liber: SB_PEOPLE, pecunia: SB_PEOPLE, villa: SB_PEOPLE,
+};
+// frame: intr (S V) · accP (S V person) · accT (S V thing) · give (S V thing to person)
+//        datP (S V + dative person) · be (adsum/absum) · beTired (sum + fessus)
+// en = [base, he-form, -ing, past]; noImperfect for verbs whose English
+// "was ...ing" sounds odd (was loving / was seeing...).
+const SB_VERBS = [
+  {lemma:"dormio", frame:"intr", en:["sleep","sleeps","sleeping","slept"]},
+  {lemma:"sedeo", frame:"intr", en:["sit","sits","sitting","sat"]},
+  {lemma:"sto", frame:"intr", en:["stand","stands","standing","stood"]},
+  {lemma:"surgo", frame:"intr", en:["get up","gets up","getting up","got up"]},
+  {lemma:"laboro", frame:"intr", en:["work","works","working","worked"]},
+  {lemma:"canto", frame:"intr", en:["sing","sings","singing","sang"]},
+  {lemma:"venio", frame:"intr", en:["come","comes","coming","came"]},
+  {lemma:"amo", frame:"accP", en:["love","loves","loving","loved"], noImperfect:true},
+  {lemma:"voco", frame:"accP", en:["call","calls","calling","called"]},
+  {lemma:"specto", frame:"accP", en:["watch","watches","watching","watched"]},
+  {lemma:"video", frame:"accP", en:["see","sees","seeing","saw"], noImperfect:true},
+  {lemma:"timeo", frame:"accP", en:["fear","fears","fearing","feared"], noImperfect:true},
+  {lemma:"traho", frame:"accP", en:["drag","drags","dragging","dragged"]},
+  {lemma:"duco", frame:"accP", en:["lead","leads","leading","led"]},
+  {lemma:"rogo", frame:"accP", en:["ask","asks","asking","asked"]},
+  {lemma:"invenio", frame:"accP", en:["find","finds","finding","found"], noImperfect:true},
+  {lemma:"capio", frame:"accP", en:["capture","captures","capturing","captured"], objects:["fur"], notSubjects:["fur"]},
+  {lemma:"interficio", frame:"accP", en:["kill","kills","killing","killed"], objects:["fur"], subjects:["rex","servus","vir","dominus"], nounSubjectOnly:true},
+  {lemma:"capio", frame:"accT", en:["take","takes","taking","took"], objects:["pecunia","donum","liber"]},
+  {lemma:"porto", frame:"accT", en:["carry","carries","carrying","carried"], objects:["donum","liber","pecunia"]},
+  {lemma:"invenio", frame:"accT", en:["find","finds","finding","found"], objects:["pecunia","donum","liber","villa"], noImperfect:true},
+  {lemma:"specto", frame:"accT", en:["look at","looks at","looking at","looked at"], objects:["villa","donum","liber"]},
+  {lemma:"video", frame:"accT", en:["see","sees","seeing","saw"], objects:["villa","donum","liber","pecunia"], noImperfect:true},
+  {lemma:"mitto", frame:"accT", en:["send","sends","sending","sent"], objects:["donum","liber","pecunia"]},
+  {lemma:"do", frame:"give", en:["give","gives","giving","gave"], objects:["donum","liber","pecunia"]},
+  {lemma:"credo", frame:"datP", en:["trust","trusts","trusting","trusted"], noImperfect:true},
+  {lemma:"respondeo", frame:"datP", en:["reply to","replies to","replying to","replied to"]},
+  {lemma:"adsum", frame:"be", adj:"present"},
+  {lemma:"absum", frame:"be", adj:"absent"},
+  {lemma:"sum", frame:"beAdj"}, // "X is tired", "X was very angry", "X was braver than Y"
+];
+// Vocabulary as it's printed on the sheet (declension numbers left off,
+// since working out the declension is one of the questions).
+const SB_VERB_ENTRY = {
+  amo:"amo (perfect: amavi) = I love", canto:"canto (perfect: cantavi) = I sing",
+  capio:"capio (perfect: cepi) = I take, capture", credo:"credo (perfect: credidi) (+ dat.) = I believe, trust",
+  do:"do (perfect: dedi) = I give", dormio:"dormio (perfect: dormivi) = I sleep", duco:"duco (perfect: duxi) = I lead",
+  interficio:"interficio (perfect: interfeci) = I kill", invenio:"invenio (perfect: inveni) = I find",
+  laboro:"laboro (perfect: laboravi) = I work", mitto:"mitto (perfect: misi) = I send",
+  porto:"porto (perfect: portavi) = I carry", respondeo:"respondeo (perfect: respondi) = I reply",
+  rogo:"rogo (perfect: rogavi) = I ask", sedeo:"sedeo (perfect: sedi) = I sit",
+  specto:"specto (perfect: spectavi) = I look at, watch", sto:"sto (perfect: steti) = I stand",
+  surgo:"surgo (perfect: surrexi) = I get up", timeo:"timeo (perfect: timui) = I fear, am afraid",
+  traho:"traho (perfect: traxi) = I drag", venio:"venio (perfect: veni) = I come",
+  video:"video (perfect: vidi) = I see", voco:"voco (perfect: vocavi) = I call",
+  sum:"sum = I am", adsum:"adsum = I am present", absum:"absum = I am absent",
+};
+const SB_PRONOUNS = ["I","You (sg)","He/she","We","You (pl)","They"];
+
+function sbRand(a){ return a[Math.floor(Math.random()*a.length)]; }
+// Adjectives the builder can use (checklist adjectives with sensible meanings).
+// Degrees follow booklet page 8: fortis / fortior / fortissimus.
+//  - positive: 2-1-2 adjectives take the same endings as servus / puella / donum;
+//    fortis takes rex-type endings (fortis, fortem, fortis, forti; fortes...).
+//  - superlative (-issimus) always takes servus / puella endings.
+//  - comparative (-ior) is only used as "X was braver than Y" (… fortior quam …),
+//    i.e. nominative only: -ior (singular), -iores (plural).
+// fessus and novus are only used in the positive (no fessior / novior on the sheets).
+const SB_ADJS = {
+  fortis:   {entry:"fortis = brave", mean:"brave", stem:"fort", type:"3", en:{positive:"brave", comparative:"braver", superlative:"very brave"}, people:true},
+  callidus: {entry:"callidus = clever", mean:"clever", stem:"callid", type:"212", en:{positive:"clever", comparative:"cleverer", superlative:"very clever"}, people:true},
+  iratus:   {entry:"iratus = angry", mean:"angry", stem:"irat", type:"212", en:{positive:"angry", comparative:"angrier", superlative:"very angry"}, people:true},
+  fessus:   {entry:"fessus, -a = tired", mean:"tired", stem:"fess", type:"212", en:{positive:"tired"}, people:true},
+  novus:    {entry:"novus, -a = new", mean:"new", stem:"nov", type:"212", en:{positive:"new"}, things:["liber","villa","donum"]},
+};
+const SB_GENDER_ENDINGS = {m: SB_ENDINGS[2], f: SB_ENDINGS[1], n: SB_ENDINGS["2n"]};
+function sbAdjForm(adj, degree, g, kase, num){
+  const a = SB_ADJS[adj];
+  const ci = SB_CASES.indexOf(kase);
+  if(degree === "superlative") return a.stem + "issim" + SB_GENDER_ENDINGS[g][num][ci];
+  if(degree === "comparative") return a.stem + [["ior","iorem","ioris","iori"],["iores","iores","iorum","ioribus"]][num][ci];
+  if(a.type === "3") return a.stem + [["is","em","is","i"],["es","es","ium","ibus"]][num][ci];
+  return a.stem + SB_GENDER_ENDINGS[g][num][ci];
+}
+
+function sbNP(np){ // English noun phrase, e.g. "the king's sons", "the very brave slaves"
+  const n = SB_NOUNS[np.lemma];
+  const noun = n.en[Math.min(np.num, n.en.length-1)];
+  if(np.poss){ const p = SB_NOUNS[np.poss.lemma]; return "the " + p.poss[np.poss.num] + " " + noun; }
+  if(np.adj) return "the " + SB_ADJS[np.adj.adj].en[np.adj.degree] + " " + noun;
+  return "the " + noun;
+}
+function sbLatinNP(np){
+  const words = [sbNounForm(np.lemma, np.kase, np.num)];
+  if(np.adj) words.push(sbAdjForm(np.adj.adj, np.adj.degree, SB_NOUNS[np.lemma].g, np.kase, np.num));
+  if(np.poss) words.push(sbNounForm(np.poss.lemma, "gen", np.poss.num));
+  return words;
+}
+
+// opts.bonus: like test B(iii) — only the verb is given, so every noun and
+// adjective must come from the checklist words NOT in italics.
+function sbMakeSentence(opts){
+  const bonus = !!(opts && opts.bonus);
+  const ok = l => !bonus || !LATIN_ITALIC.has(l);
+  const people = SB_PEOPLE.filter(ok);
+  const adjsFor = (degree, nounLemma) => Object.keys(SB_ADJS).filter(a => {
+    const A = SB_ADJS[a];
+    if(!ok(a) || !A.en[degree]) return false;
+    return SB_NOUNS[nounLemma].person ? !!A.people : !!(A.things && A.things.includes(nounLemma));
+  });
+  for(let tries = 0; tries < 400; tries++){
+    const v = sbRand(SB_VERBS);
+    const def = VERB_DEFS.find(d => d.lemma === v.lemma);
+    let tenses = def.irregular ? ["present","imperfect"] : ["present","imperfect","perfect"];
+    if(v.noImperfect) tenses = tenses.filter(t => t !== "imperfect");
+    const tense = sbRand(tenses);
+    const used = new Set();
+    let possUsed = false;
+    const pickNum = (lemma, possessed) => {
+      const n = SB_NOUNS[lemma];
+      if(n.sgOnly) return 0;
+      if(possessed && (lemma === "uxor" || lemma === "maritus")) return 0; // one wife/husband each
+      return Math.random() < 0.4 ? 1 : 0;
+    };
+    const maybePoss = (np, chance) => {
+      const list = SB_POSSESSORS[np.lemma];
+      if(possUsed || !list || Math.random() >= chance) return;
+      const options = list.filter(l => !used.has(l) && ok(l));
+      if(!options.length) return;
+      const pl = sbRand(options);
+      const possNum = SB_NOUNS[np.lemma].person ? 0 : (Math.random() < 0.3 ? 1 : 0);
+      np.poss = {lemma: pl, num: possNum};
+      if(np.lemma === "uxor" || np.lemma === "maritus") np.num = 0;
+      used.add(pl); possUsed = true;
+    };
+
+    // --- subject: a noun (3rd person) or a pronoun (1st/2nd person, left out in Latin) ---
+    let subj = null, p;
+    const pronounOK = v.frame !== "beAdj" && !v.nounSubjectOnly;
+    if(pronounOK && Math.random() < 0.3){
+      p = sbRand([0,1,3,4]);
+    } else {
+      const choices = (v.subjects || people).filter(l => !(v.notSubjects || []).includes(l) && ok(l));
+      if(!choices.length) continue;
+      const lem = sbRand(choices);
+      used.add(lem);
+      subj = {lemma: lem, num: pickNum(lem, false), kase: "nom"};
+      p = subj.num ? 5 : 2;
+    }
+
+    // --- the rest of the sentence, by frame ---
+    let obj = null, dat = null, pred = null;
+    if(v.frame === "accP"){
+      const objOpts = (v.objects || people).filter(l => !used.has(l) && ok(l));
+      if(!objOpts.length) continue;
+      const ol = sbRand(objOpts); used.add(ol);
+      obj = {lemma: ol, num: pickNum(ol, false), kase: "acc"};
+    } else if(v.frame === "accT"){
+      const things = v.objects.filter(ok);
+      if(!things.length) continue;
+      const ol = sbRand(things); used.add(ol);
+      obj = {lemma: ol, num: pickNum(ol, false), kase: "acc"};
+    } else if(v.frame === "give"){
+      const things = v.objects.filter(ok);
+      if(!things.length) continue;
+      const ol = sbRand(things); used.add(ol);
+      obj = {lemma: ol, num: pickNum(ol, false), kase: "acc"};
+      const dl = sbRand(people.filter(l => !used.has(l))); used.add(dl);
+      dat = {lemma: dl, num: dl === "filia" ? 0 : pickNum(dl, false), kase: "dat"}; // avoid filiabus
+    } else if(v.frame === "datP"){
+      const dl = sbRand(people.filter(l => !used.has(l))); used.add(dl);
+      dat = {lemma: dl, num: dl === "filia" ? 0 : pickNum(dl, false), kase: "dat"};
+    } else if(v.frame === "beAdj"){
+      // "X is/was tired" · "X was very angry" · "X was braver than Y"
+      const degree = sbRand(["positive","comparative","superlative"]);
+      const adjs = adjsFor(degree, subj.lemma);
+      if(!adjs.length) continue;
+      pred = {adj: sbRand(adjs), degree};
+      if(degree === "comparative"){
+        const ql = sbRand(people.filter(l => !used.has(l))); used.add(ql);
+        pred.quam = {lemma: ql, num: pickNum(ql, false), kase: "nom", afterQuam: true};
+      }
+    }
+    // at most one genitive, and never in a 3-noun "give" sentence
+    if(v.frame !== "give"){
+      const targets = [subj, obj, dat].filter(Boolean);
+      shuffle(targets).forEach(np => maybePoss(np, 0.35));
+    }
+    // sometimes an adjective on a noun: "the very brave slaves", "the new book"
+    // (positive or superlative; never on a noun that already has a genitive)
+    if(v.frame !== "beAdj" && Math.random() < 0.45){
+      for(const np of shuffle([subj, obj, dat].filter(np => np && !np.poss))){
+        const degree = sbRand(["positive","superlative"]);
+        const adjs = adjsFor(degree, np.lemma);
+        if(!adjs.length) continue;
+        np.adj = {adj: sbRand(adjs), degree};
+        break;
+      }
+    }
+    // a husband and a wife in the same sentence: keep them both singular
+    const nps = [subj, obj, dat, pred && pred.quam].filter(Boolean);
+    if(nps.some(np => np.lemma === "uxor" || (np.poss && np.poss.lemma === "uxor")) &&
+       nps.some(np => np.lemma === "maritus" || (np.poss && np.poss.lemma === "maritus"))){
+      nps.forEach(np => { if(np.lemma === "uxor" || np.lemma === "maritus") np.num = 0;
+                          if(np.poss && (np.poss.lemma === "uxor" || np.poss.lemma === "maritus")) np.poss.num = 0; });
+    }
+    if(subj) p = subj.num ? 5 : 2; // numbers above may have changed
+
+    // --- English ---
+    let verbEn;
+    if(v.frame === "be"){
+      verbEn = (tense === "present" ? VF_BE_PRESENT[p] : VF_BE_PAST[p]) + " " + v.adj;
+    } else if(v.frame === "beAdj"){
+      verbEn = (tense === "present" ? VF_BE_PRESENT[p] : VF_BE_PAST[p]) + " " + SB_ADJS[pred.adj].en[pred.degree] +
+        (pred.quam ? " than " + sbNP(pred.quam) : "");
+    } else if(tense === "present"){
+      verbEn = p === 2 ? v.en[1] : v.en[0];
+    } else if(tense === "imperfect"){
+      verbEn = VF_BE_PAST[p] + " " + v.en[2];
+    } else {
+      verbEn = v.en[3];
+    }
+    const subjEn = subj ? sbNP(subj) : SB_PRONOUNS[p];
+    let english = subjEn + " " + verbEn;
+    if(obj) english += " " + sbNP(obj);
+    if(dat) english += (v.frame === "give" ? " to " : " ") + sbNP(dat);
+    english = english.charAt(0).toUpperCase() + english.slice(1) + ".";
+
+    // --- Latin (subject - dative - object - verb; adjective & genitive after their noun) ---
+    const latinWords = [];
+    if(subj) latinWords.push(...sbLatinNP(subj));
+    if(dat) latinWords.push(...sbLatinNP(dat));
+    if(obj) latinWords.push(...sbLatinNP(obj));
+    let predWord = null;
+    if(pred){
+      predWord = sbAdjForm(pred.adj, pred.degree, SB_NOUNS[subj.lemma].g, "nom", subj.num);
+      latinWords.push(predWord);
+      if(pred.quam) latinWords.push("quam", sbNounForm(pred.quam.lemma, "nom", pred.quam.num));
+    }
+    const verbLatin = latinVerbForm(def, tense, p);
+    latinWords.push(verbLatin);
+
+    // --- parts to identify, in the order they appear in the English ---
+    const parts = [];
+    const nounPart = np => ({type:"noun", lemma: np.lemma, latin: sbNounForm(np.lemma, np.kase, np.num),
+      ans: {kase: np.kase, decl: String(SB_NOUNS[np.lemma].decl), num: np.num ? "pl" : "sg"}, afterQuam: !!np.afterQuam});
+    const adjPart = (a, nounLatin, g, kase, num, predicative) => ({type:"adj", lemma: a.adj,
+      latin: sbAdjForm(a.adj, a.degree, g, kase, num), ans: {degree: a.degree},
+      agrees: nounLatin, kase, num, predicative});
+    const addNP = np => {
+      if(!np) return;
+      if(np.poss) parts.push(nounPart({lemma: np.poss.lemma, kase: "gen", num: np.poss.num}));
+      if(np.adj) parts.push(adjPart(np.adj, sbNounForm(np.lemma, np.kase, np.num), SB_NOUNS[np.lemma].g, np.kase, np.num, false));
+      parts.push(nounPart(np));
+    };
+    addNP(subj); addNP(obj); addNP(dat);
+    if(pred){
+      parts.push(adjPart(pred, sbNounForm(subj.lemma, "nom", subj.num), SB_NOUNS[subj.lemma].g, "nom", subj.num, true));
+      if(pred.quam) parts.push(nounPart(pred.quam));
+    }
+    parts.push({type:"verb", lemma: v.lemma, latin: verbLatin,
+      ans: {tense, person: String((p % 3) + 1), num: p < 3 ? "sg" : "pl"}});
+    if(!parts.some(x => x.type === "noun")) continue; // always at least one noun + the verb
+
+    // --- vocabulary given (dictionary forms) ---
+    const vocab = [];
+    const adjLemmas = parts.filter(x => x.type === "adj").map(x => x.lemma);
+    if(!bonus){
+      parts.filter(x => x.type === "noun").forEach(x => vocab.push(SB_NOUNS[x.lemma].entry + " = " + SB_NOUNS[x.lemma].mean));
+      adjLemmas.forEach(a => vocab.push(SB_ADJS[a].entry));
+    }
+    if(pred && pred.quam) vocab.push("quam = than"); // in italics on the sheet, so always given
+    vocab.push(SB_VERB_ENTRY[v.lemma]);
+
+    return {english, latinWords, parts, vocab, hasAdj: adjLemmas.length > 0, bonus};
+  }
+  throw new Error("could not build a sentence");
+}
+
+// ---- A balanced round of 10 ----
+// Rather than 10 independent random sentences, build a big pool and pick
+// sentences that fill a checklist, so every round has a proper mix:
+// all three tenses, all four cases, all three declensions, singular and
+// plural, 1st/2nd/3rd person, a sum/adsum/absum sentence, and no verb twice.
+const SB_ROUND_TARGETS = {
+  tense:  {present:3, imperfect:3, perfect:3},
+  kase:   {nom:5, acc:3, gen:2, dat:2},
+  decl:   {"1":3, "2":3, "3":3},
+  nnum:   {sg:4, pl:3},
+  vnum:   {sg:3, pl:3},
+  person: {"1":1, "2":1, "3":5},
+  be:     {yes:1},
+  adj:    {positive:1, comparative:1, superlative:1},
+};
+const SB_TARGET_WEIGHTS = {tense:3, kase:3, decl:2, nnum:1, vnum:1, person:2, be:3, adj:4};
+const SB_MAX_ADJ_SENTENCES = 4;
+const SB_BE = ["sum","adsum","absum"];
+
+function sbFeatures(q){
+  const f = {tense:{}, kase:{}, decl:{}, nnum:{}, vnum:{}, person:{}, be:{}, adj:{}};
+  const add = (cat, key) => { f[cat][key] = (f[cat][key] || 0) + 1; };
+  q.parts.forEach(p=>{
+    if(p.type === "noun"){ add("kase", p.ans.kase); add("decl", p.ans.decl); add("nnum", p.ans.num); }
+    else if(p.type === "adj"){ add("adj", p.ans.degree); }
+    else {
+      add("tense", p.ans.tense); add("vnum", p.ans.num); add("person", p.ans.person);
+      if(SB_BE.includes(p.lemma)) add("be", "yes");
+      f.verb = p.lemma;
+    }
+  });
+  f.subject = (q.parts.find(p => p.type === "noun" && p.ans.kase === "nom") || {}).lemma || null;
+  return f;
+}
+function sbRoundShortfall(counts){
+  let missing = 0;
+  for(const cat in SB_ROUND_TARGETS)
+    for(const key in SB_ROUND_TARGETS[cat])
+      missing += Math.max(0, SB_ROUND_TARGETS[cat][key] - (counts[cat][key] || 0));
+  return missing;
+}
+function sbMakeRound(bonus, n){
+  n = n || 10;
+  let best = null, bestMissing = Infinity;
+  for(let attempt = 0; attempt < 12 && bestMissing > 0; attempt++){
+    const pool = [], seenEn = new Set();
+    for(let i = 0; i < 300; i++){
+      const q = sbMakeSentence({bonus});
+      if(seenEn.has(q.english)) continue;
+      seenEn.add(q.english);
+      pool.push({q, f: sbFeatures(q)});
+    }
+    const counts = {tense:{}, kase:{}, decl:{}, nnum:{}, vnum:{}, person:{}, be:{}, adj:{}};
+    let adjSentences = 0;
+    const usedVerbs = new Set(), subjCount = {};
+    const picked = [];
+    while(picked.length < n){
+      let top = null, topScore = -Infinity;
+      for(const c of pool){
+        if(c.taken || usedVerbs.has(c.f.verb)) continue;                  // never the same verb twice
+        if(c.f.be.yes && (counts.be.yes || 0) >= 2) continue;              // at most 2 sum/adsum/absum
+        const hasAdj = Object.keys(c.f.adj).length > 0;
+        if(hasAdj && adjSentences >= SB_MAX_ADJ_SENTENCES) continue;      // adjectives in 3-4 of the 10
+        if(c.f.subject && (subjCount[c.f.subject] || 0) >= 2) continue;    // vary who's doing it
+        let score = Math.random() * 0.5;
+        for(const cat in SB_ROUND_TARGETS){
+          for(const key in c.f[cat]){
+            const need = Math.max(0, (SB_ROUND_TARGETS[cat][key] || 0) - (counts[cat][key] || 0));
+            score += SB_TARGET_WEIGHTS[cat] * Math.min(need, c.f[cat][key]);
+          }
+        }
+        if(score > topScore){ topScore = score; top = c; }
+      }
+      if(!top) break;
+      top.taken = true;
+      picked.push(top.q);
+      usedVerbs.add(top.f.verb);
+      if(Object.keys(top.f.adj).length) adjSentences++;
+      if(top.f.subject) subjCount[top.f.subject] = (subjCount[top.f.subject] || 0) + 1;
+      for(const cat in counts) for(const key in top.f[cat]) counts[cat][key] = (counts[cat][key] || 0) + top.f[cat][key];
+    }
+    if(picked.length < n) continue;
+    const missing = sbRoundShortfall(counts);
+    if(missing < bestMissing){ bestMissing = missing; best = picked; }
+  }
+  return shuffle(best); // mixed order, so the "big" sentences aren't all at the start
+}
+
+// ================= UTIL =================
+// By default, matching is lenient: accents and capitals are ignored.
+// {keepAccents:true} makes accents/umlauts/ß count (French, German).
+// {keepCase:true} makes capital letters count — except the very first
+// letter of the answer (German nouns must be capitalised).
+function normalize(s, opts){
+  const keepAccents = !!(opts && opts.keepAccents);
+  const keepCase = !!(opts && opts.keepCase);
+  let out = s.toString().trim();
+  if(keepAccents){
+    out = out.normalize("NFC");
+  } else {
+    out = out.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ß/g, "ss"); // strip accents
+  }
+  out = keepCase ? out.charAt(0).toLowerCase() + out.slice(1) : out.toLowerCase();
+  out = out.replace(/[’']/g, "");          // drop apostrophes
+  out = out.replace(/-/g, " ");            // hyphens -> space
+  out = out.replace(/[^a-zA-Z0-9 À-ÖØ-öø-ÿœŒß]/g, " "); // drop other punctuation
+  out = out.replace(/\s+/g, " ").trim();
+  return out;
+}
+// When a strict answer is wrong only because of accents and/or capitals,
+// say so — so "nearly right" doesn't feel the same as "no idea".
+function nearMissHint(subject, targets, raw){
+  const sa = !!subject.strictAccents, sc = !!subject.strictCase;
+  if(!sa && !sc) return null;
+  for(const t of targets){
+    if(sc && normalize(t, {keepAccents:sa}) === normalize(raw, {keepAccents:sa})) return subject.caseHint || null;
+    if(sa && normalize(t, {keepCase:sc}) === normalize(raw, {keepCase:sc})) return subject.accentHint || null;
+    if(normalize(t) === normalize(raw)) return subject.bothHint || subject.accentHint || null;
+  }
+  return null;
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ================= NORMALIZE WEEK DATA =================
+// Turns either a "vocab" or "grammar" week into a common shape: a flat list
+// of items, each keyed uniquely, plus one or more "directions" describing
+// how to quiz them (what's shown, what counts as correct).
+function prepareWeek(subject, week){
+  // French answers must be typed with the right accents to count as
+  // correct; other subjects keep the lenient (accent-insensitive) check.
+  const strictOpts = {keepAccents: !!subject.strictAccents, keepCase: !!subject.strictCase};
+  if(week.type === "builder"){ week.items = []; week.directions = []; week.unit = "sentence"; return; }
+  if(week.type === "grammar"){
+    const items = [];
+    week.groups.forEach(g=>{
+      g.items.forEach(it=>{
+        items.push({
+          key: g.title + " :: " + it.prompt,
+          group: g.title,
+          prompt: it.prompt,
+          answer: it.answer,
+          accepted: it.accepted || [it.answer],
+          meaning: it.meaning || null
+        });
+      });
+    });
+    week.items = items;
+    week.unit = "form";
+    week.directions = [{
+      id: "prompt-answer",
+      label: "Fill in the form",
+      getPrompt: it => it.prompt,
+      getGroup: it => week.hideGroup ? null : it.group,
+      getMeaning: it => it.meaning,
+      getAnswerText: it => it.answer,
+      isAccepted: (it, raw) => it.accepted.some(a => normalize(a, strictOpts) === normalize(raw, strictOpts)),
+      nearMiss: (it, raw) => nearMissHint(subject, it.accepted, raw)
+    }];
+  } else {
+    const items = week.words.map(w => ({
+      key: w.foreign,
+      group: null,
+      foreign: w.foreign,
+      lemma: w.lemma || w.foreign,
+      english: w.english,
+      accepted: w.accepted,
+      oneWay: !!(week.italics && LATIN_ITALIC.has(w.lemma || w.foreign))
+    }));
+    week.items = items;
+    week.unit = "word";
+    week.hasOneWay = items.some(it => it.oneWay);
+    week.directions = [
+      {
+        id: "foreign-english",
+        label: subject.name + " → English",
+        getPrompt: it => it.foreign,
+        getGroup: () => null,
+        getMeaning: () => null,
+        getAnswerText: it => it.english,
+        // English answers never have accents, so plain lenient matching is fine here
+        isAccepted: (it, raw) => it.accepted.some(a => normalize(a) === normalize(raw))
+      },
+      {
+        id: "english-foreign",
+        label: "English → " + subject.name,
+        getPrompt: it => it.english,
+        getGroup: () => null,
+        getMeaning: () => null,
+        getAnswerText: it => it.foreign,
+        isAccepted: (it, raw) => normalize(it.foreign, strictOpts) === normalize(raw, strictOpts),
+        nearMiss: (it, raw) => nearMissHint(subject, [it.foreign], raw)
+      }
+    ];
+  }
+}
+Object.keys(SUBJECTS).forEach(key=>{
+  const subject = SUBJECTS[key];
+  subject.weeks.forEach(week => prepareWeek(subject, week));
+});
+
+let currentSubjectKey = null;
+let currentWeek = null;
+let ITEMS = []; // active item list for the chosen subject/week
+
+function unitPlural(){
+  return currentWeek && currentWeek.unit === "form" ? "forms" : "words";
+}
+
+// ================= PERSISTENCE (this browser's localStorage) =================
+// No sign-in required, so this stays a plain public link — progress is
+// remembered on whichever device/browser he plays on, per subject+week.
+let statsCache = {}; // { [item.key]: {c: correctCount, w: wrongCount} }
+function statsStorageKey(subjectKey, weekId){
+  return "vocabChalkboard:" + subjectKey + "-" + weekId;
+}
+
+function wordStatus(key){
+  const s = statsCache[key];
+  if(!s || (s.c === 0 && s.w === 0)) return null;
+  if(s.c > s.w) return {label:"mastered", cls:"status-mastered"};   // more right than wrong
+  if(s.c === s.w) return {label:"learning", cls:"status-learning"}; // tied so far
+  return {label:"needs practice", cls:"status-practice"};           // more wrong than right
+}
+function countMastered(){
+  return ITEMS.filter(it => (wordStatus(it.key)||{}).label === "mastered").length;
+}
+function itemsNeedingPractice(){
+  return ITEMS.filter(it => (wordStatus(it.key)||{}).label === "needs practice");
+}
+
+function loadStats(subjectKey, week){
+  statsCache = {};
+  const note = document.getElementById("syncNote");
+  try {
+    const raw = localStorage.getItem(statsStorageKey(subjectKey, week.id));
+    statsCache = (raw && JSON.parse(raw).words) || {};
+    // Sets that were merged keep the progress from their old versions:
+    // copy any word this set hasn't recorded yet from the old set(s).
+    if(week.migrateFrom){
+      const keys = new Set(week.items.map(it => it.key));
+      let changed = false;
+      week.migrateFrom.forEach(oldId=>{
+        const oldRaw = localStorage.getItem(statsStorageKey(subjectKey, oldId));
+        const old = (oldRaw && JSON.parse(oldRaw).words) || {};
+        Object.keys(old).forEach(k=>{
+          if(keys.has(k) && !statsCache[k]){ statsCache[k] = old[k]; changed = true; }
+        });
+      });
+      if(changed) localStorage.setItem(statsStorageKey(subjectKey, week.id), JSON.stringify({ words: statsCache }));
+    }
+    note.textContent = "Progress is saved on this device.";
+  } catch(e){
+    note.textContent = "Progress can't be saved on this device right now.";
+  }
+  refreshStatsUI();
+}
+
+function recordResult(item, correct){
+  const key = item.key;
+  const prev = statsCache[key] || {c:0, w:0};
+  const next = { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1) };
+  statsCache[key] = next;
+  refreshStatsUI();
+  try {
+    localStorage.setItem(
+      statsStorageKey(currentSubjectKey, currentWeek.id),
+      JSON.stringify({ words: statsCache })
+    );
+  } catch(e){ /* best effort — page still works without saving */ }
+}
+
+function refreshStatsUI(){
+  if(!ITEMS.length) return;
+  const mastered = countMastered();
+  const chip = document.getElementById("masteryChip");
+  chip.textContent = mastered + " / " + ITEMS.length + " mastered";
+  chip.classList.toggle("hidden", Object.keys(statsCache).length === 0 && mastered === 0);
+
+  const practiceBtn = document.getElementById("practiceOnlyBtn");
+  const n = itemsNeedingPractice().length;
+  practiceBtn.textContent = "Needs practice (" + n + ")";
+  practiceBtn.disabled = n === 0;
+
+  renderFlashStatus();
+}
+
+// ================= SCREEN NAV =================
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// --- Subject picker ---
+const subjectGrid = document.getElementById("subjectGrid");
+Object.keys(SUBJECTS).forEach(key=>{
+  const s = SUBJECTS[key];
+  const btn = document.createElement("button");
+  btn.className = "board-card";
+  btn.innerHTML = '<span class="emoji">' + s.emoji + '</span>' +
+    '<span class="titles"><span class="t1">' + s.name + '</span>' +
+    '<span class="t2">' + s.weeks.length + ' practice set' + (s.weeks.length>1?"s":"") + '</span></span>' +
+    '<span class="arrow">&rsaquo;</span>';
+  btn.addEventListener("click", ()=> openSubject(key));
+  subjectGrid.appendChild(btn);
+});
+
+function openSubject(key){
+  currentSubjectKey = key;
+  const s = SUBJECTS[key];
+  document.getElementById("weekScreenTitle").textContent = s.name;
+  const weekGrid = document.getElementById("weekGrid");
+  weekGrid.innerHTML = "";
+  s.weeks.forEach(w=>{
+    const btn = document.createElement("button");
+    btn.className = "board-card";
+    btn.innerHTML = '<span class="emoji">' + s.emoji + '</span>' +
+      '<span class="titles"><span class="t1">' + w.label + '</span>' +
+      '<span class="t2">' + w.sublabel + '</span></span>' +
+      '<span class="arrow">&rsaquo;</span>';
+    btn.addEventListener("click", ()=> openWeek(w));
+    weekGrid.appendChild(btn);
+  });
+  showScreen("screen-week");
+}
+
+document.getElementById("backToSubject").addEventListener("click", ()=> showScreen("screen-subject"));
+document.getElementById("backToWeek").addEventListener("click", ()=> openSubject(currentSubjectKey));
+
+function openWeek(week){
+  currentWeek = week;
+  ITEMS = week.items;
+  const s = SUBJECTS[currentSubjectKey];
+  document.getElementById("mainTitle").textContent = s.name;
+  document.getElementById("mainSubtitle").textContent = week.label + " · " + week.sublabel;
+  document.getElementById("masteryChip").classList.add("hidden");
+  document.getElementById("syncNote").textContent = "";
+
+  // reset flashcards for this item set
+  flashOrder = ITEMS.map((_,i)=>i);
+  flashIdx = 0;
+  flashShowingBack = false;
+
+  // reset quiz screen state
+  document.getElementById("quizSetup").classList.remove("hidden");
+  document.getElementById("quizPlay").classList.add("hidden");
+  document.getElementById("quizResults").classList.add("hidden");
+
+  // sentence-practice tabs only show up for weeks that have sentence data
+  const hasSentences = !!(week.sentences && week.sentences.length);
+  document.getElementById("tabTranslate").classList.toggle("hidden", !hasSentences);
+  document.getElementById("tabIdentify").classList.toggle("hidden", !hasSentences);
+  document.getElementById("tabEndings").classList.toggle("hidden", !(hasSentences && week.forms));
+  document.getElementById("tabVerbforms").classList.toggle("hidden", !week.verbForms);
+  if(week.hideIdentify) document.getElementById("tabIdentify").classList.add("hidden");
+  if(week.hideEndings) document.getElementById("tabEndings").classList.add("hidden");
+  const hasBuilder = !!week.builder;
+  document.getElementById("tabBuilder").classList.toggle("hidden", !hasBuilder);
+  document.getElementById("tabBonus").classList.toggle("hidden", !hasBuilder);
+  const labels = week.tabLabels || {};
+  document.querySelector('.tab-btn[data-tab="flash"]').textContent = labels.flash || "Flashcards";
+  document.querySelector('.tab-btn[data-tab="quiz"]').textContent = labels.quiz || "Quiz";
+  resetSentencePanels();
+
+  // English -> Latin only uses words that aren't in italics on the sheet
+  const dirNote = document.getElementById("dirNote");
+  if(week.hasOneWay){
+    const two = week.items.filter(it => !it.oneWay).length;
+    dirNote.textContent = "English → " + s.name + " only tests the " + two + " of " + week.items.length +
+      " that aren't in italics on your sheet. In Mixed, the italic ones are always asked " + s.name + " → English.";
+    dirNote.classList.remove("hidden");
+  } else {
+    dirNote.classList.add("hidden");
+  }
+
+  // build the Direction row from this week's directions; hide it entirely
+  // when there's only one (grammar weeks are always asked the same way)
+  const dirRow = document.getElementById("dirRow");
+  const dirField = document.getElementById("dirField");
+  dirRow.innerHTML = "";
+  if(week.directions.length > 1){
+    dirField.classList.remove("hidden");
+    week.directions.forEach(d=>{
+      const b = document.createElement("button");
+      b.dataset.val = d.id;
+      b.textContent = d.label;
+      dirRow.appendChild(b);
+    });
+    const mixedBtn = document.createElement("button");
+    mixedBtn.dataset.val = "mixed";
+    mixedBtn.textContent = "Mixed";
+    dirRow.appendChild(mixedBtn);
+    direction = s.defaultDirection;
+  } else {
+    dirField.classList.add("hidden");
+    direction = week.directions[0].id;
+  }
+  mode = s.defaultMode;
+  wordSet = "all";
+  setSelected("dirRow", direction);
+  setSelected("modeRow", mode);
+  setSelected("setRow", "all");
+
+  // unit-aware button copy ("words" vs "forms")
+  const unit = unitPlural();
+  document.getElementById("setFieldLabel").textContent = week.unit === "form" ? "Forms" : "Words";
+  document.getElementById("setRow").children[0].textContent = "All " + unit;
+  document.getElementById("restartAllBtn").textContent = "Start over (all " + unit + ")";
+
+  // default tab: Build sentences where it exists, otherwise Flashcards
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  if(hasBuilder){
+    document.getElementById("tabBuilder").classList.add("active");
+    document.getElementById("panel-builder").classList.add("active");
+    setBuilderMode("normal", true);
+  } else {
+    document.querySelector('.tab-btn[data-tab="flash"]').classList.add("active");
+    document.getElementById("panel-flash").classList.add("active");
+  }
+
+  showScreen("screen-main");
+  renderFlash();
+  loadStats(currentSubjectKey, week);
+}
+
+function setSelected(rowId, val){
+  const row = document.getElementById(rowId);
+  [...row.children].forEach(b=>{
+    b.classList.toggle("selected", b.dataset.val === val);
+  });
+}
+
+// ================= TABS (within main screen) =================
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-"+btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab === "builder") setBuilderMode(btn.dataset.mode || "normal");
+  });
+});
+
+// ================= FLASHCARDS =================
+// Flashcards always use the week's first/canonical direction (for vocab
+// weeks that's <subject> -> English, matching the old behaviour).
+let flashOrder = [];
+let flashIdx = 0;
+let flashShowingBack = false;
+
+function renderFlash(){
+  if(!ITEMS.length) return;
+  const item = ITEMS[flashOrder[flashIdx]];
+  const dir = currentWeek.directions[0];
+  const front = dir.getPrompt(item);
+  const back = dir.getAnswerText(item);
+  const group = dir.getGroup(item);
+  const meaning = dir.getMeaning(item);
+
+  document.getElementById("flashFront").textContent = flashShowingBack ? back : front;
+  document.getElementById("flashHint").textContent = flashShowingBack ? "tap to flip back" : "tap to flip";
+  document.getElementById("flashProgress").textContent = (flashIdx+1) + " / " + ITEMS.length;
+
+  const groupEl = document.getElementById("flashGroup");
+  if(group){ groupEl.textContent = group; groupEl.classList.remove("hidden"); }
+  else if(currentWeek.hasOneWay){
+    groupEl.textContent = item.oneWay ? "Latin → English only (italics)" : "Learn both ways";
+    groupEl.classList.remove("hidden");
+  }
+  else groupEl.classList.add("hidden");
+
+  const meaningEl = document.getElementById("flashMeaning");
+  if(meaning && !flashShowingBack){ meaningEl.textContent = meaning; meaningEl.classList.remove("hidden"); }
+  else meaningEl.classList.add("hidden");
+
+  renderFlashStatus();
+}
+function renderFlashStatus(){
+  if(!ITEMS.length) return;
+  const item = ITEMS[flashOrder[flashIdx]];
+  const el = document.getElementById("flashStatus");
+  const st = wordStatus(item.key);
+  if(!st){ el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  el.className = "status " + st.cls;
+  el.textContent = st.label;
+}
+document.getElementById("flashcard").addEventListener("click", ()=>{
+  flashShowingBack = !flashShowingBack;
+  renderFlash();
+});
+document.getElementById("flashNext").addEventListener("click", ()=>{
+  flashIdx = (flashIdx+1) % ITEMS.length;
+  flashShowingBack = false;
+  renderFlash();
+});
+document.getElementById("flashPrev").addEventListener("click", ()=>{
+  flashIdx = (flashIdx-1+ITEMS.length) % ITEMS.length;
+  flashShowingBack = false;
+  renderFlash();
+});
+document.getElementById("flashShuffle").addEventListener("click", ()=>{
+  flashOrder = shuffle(flashOrder);
+  flashIdx = 0;
+  flashShowingBack = false;
+  renderFlash();
+});
+
+// ================= QUIZ SETUP =================
+let direction = "english-foreign";
+let mode = "type";
+let wordSet = "all";
+
+function wireOptRow(rowId, onPick){
+  document.getElementById(rowId).addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if(!btn || btn.disabled) return;
+    [...document.getElementById(rowId).children].forEach(b=>b.classList.remove("selected"));
+    btn.classList.add("selected");
+    onPick(btn.dataset.val);
+  });
+}
+wireOptRow("dirRow", v=>direction=v);
+wireOptRow("modeRow", v=>mode=v);
+wireOptRow("setRow", v=>wordSet=v);
+
+document.getElementById("startQuizBtn").addEventListener("click", startQuiz);
+document.getElementById("retryPracticeBtn").addEventListener("click", ()=>{
+  wordSet = "practice";
+  startQuiz();
+});
+document.getElementById("restartAllBtn").addEventListener("click", ()=>{
+  wordSet = "all";
+  startQuiz();
+});
+
+// ================= NEXT-BUTTON PACING (all modes) =================
+// Correct answers move on automatically. Wrong answers leave the correct
+// answer on screen until he taps Next (or presses Enter on a keyboard).
+const NEXT_BTN_IDS = ["nextBtn","translateNextBtn","identifyNextBtn","endingsNextBtn","verbformsNextBtn","builderNextBtn"];
+function waitForNext(btnId, fn){
+  const btn = document.getElementById(btnId);
+  btn.classList.remove("hidden");
+  let used = false;
+  btn.onclick = ()=>{
+    if(used) return; // guard against a double tap/Enter
+    used = true;
+    btn.classList.add("hidden");
+    fn();
+  };
+}
+// Enter presses whichever Next button is currently visible on screen
+document.addEventListener("keydown", (e)=>{
+  if(e.key !== "Enter") return;
+  const btn = NEXT_BTN_IDS.map(id => document.getElementById(id))
+    .find(b => !b.classList.contains("hidden") && b.offsetParent !== null);
+  if(btn){ e.preventDefault(); btn.click(); }
+});
+function cancelPendingNext(){
+  NEXT_BTN_IDS.forEach(id => {
+    const b = document.getElementById(id);
+    b.classList.add("hidden");
+    b.onclick = null;
+  });
+}
+
+// ================= QUIZ PLAY =================
+let quizQueue = [];
+let quizIdx = 0;
+let quizScore = 0;
+let quizMissed = [];
+let currentDirObj = null; // resolved direction object for the current question
+let answered = false;
+
+// English -> <language> only uses two-way words (non-italic on the sheet)
+function eligibleForDirection(list){
+  if(direction !== "english-foreign") return list;
+  const two = list.filter(it => !it.oneWay);
+  return two.length ? two : list;
+}
+
+function startQuiz(){
+  const base = wordSet === "practice" && itemsNeedingPractice().length ? itemsNeedingPractice() : ITEMS;
+  const pool = eligibleForDirection(base);
+  quizQueue = shuffle(pool);
+  quizIdx = 0;
+  quizScore = 0;
+  quizMissed = [];
+  document.getElementById("quizSetup").classList.add("hidden");
+  document.getElementById("quizResults").classList.add("hidden");
+  document.getElementById("quizPlay").classList.remove("hidden");
+  renderQuestion();
+}
+
+function resolveDirection(item){
+  const dirs = currentWeek.directions;
+  if(direction === "mixed"){
+    if(item && item.oneWay) return dirs.find(d => d.id === "foreign-english") || dirs[0];
+    return dirs[Math.floor(Math.random()*dirs.length)];
+  }
+  return dirs.find(d=>d.id===direction) || dirs[0];
+}
+
+// Prefers distractors from the same group (e.g. other forms of the same
+// verb/noun) — that's what actually drills telling tenses/cases apart —
+// and always excludes any candidate whose answer text matches the
+// correct one (French/Latin paradigms often share a form across persons).
+function pickDistractors(item, dir, n){
+  const correctNorm = normalize(dir.getAnswerText(item));
+  let candidates = currentWeek.items.filter(x => x !== item);
+  if(dir.id === "english-foreign"){
+    const two = candidates.filter(x => !x.oneWay);
+    if(two.length >= n) candidates = two;
+  }
+  const group = dir.getGroup(item);
+  const sameGroup = group ? candidates.filter(x => dir.getGroup(x) === group) : [];
+  const rest = candidates.filter(x => sameGroup.indexOf(x) === -1);
+  const ordered = shuffle(sameGroup).concat(shuffle(rest));
+  const seen = new Set([correctNorm]);
+  const out = [];
+  for(const c of ordered){
+    const text = dir.getAnswerText(c);
+    const norm = normalize(text);
+    if(seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(text);
+    if(out.length >= n) break;
+  }
+  return out;
+}
+
+function renderQuestion(){
+  answered = false;
+  const item = quizQueue[quizIdx];
+  currentDirObj = resolveDirection(item);
+  const dir = currentDirObj;
+  document.getElementById("quizCounter").textContent = "Question " + (quizIdx+1) + " / " + quizQueue.length;
+  document.getElementById("quizScore").textContent = "Score: " + quizScore;
+  document.getElementById("progressFill").style.width = (100*quizIdx/quizQueue.length) + "%";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").className = "feedback";
+
+  const group = dir.getGroup(item);
+  document.getElementById("promptLabel").textContent = group || dir.label;
+  document.getElementById("promptWord").textContent = dir.getPrompt(item);
+  const meaning = dir.getMeaning(item);
+  const meaningEl = document.getElementById("promptMeaning");
+  if(meaning){ meaningEl.textContent = meaning; meaningEl.classList.remove("hidden"); }
+  else meaningEl.classList.add("hidden");
+
+  document.getElementById("nextBtn").classList.add("hidden");
+  document.getElementById("typeSubmit").classList.remove("hidden");
+
+  const choicesWrap = document.getElementById("choicesWrap");
+  const typeWrap = document.getElementById("typeWrap");
+  choicesWrap.innerHTML = "";
+
+  if(mode === "choice"){
+    typeWrap.classList.add("hidden");
+    choicesWrap.classList.remove("hidden");
+    const correctText = dir.getAnswerText(item);
+    const distractors = pickDistractors(item, dir, 3);
+    const options = shuffle([correctText, ...distractors]);
+    options.forEach(opt=>{
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = opt;
+      btn.addEventListener("click", ()=> handleChoice(btn, opt, correctText, item));
+      choicesWrap.appendChild(btn);
+    });
+  } else {
+    choicesWrap.classList.add("hidden");
+    typeWrap.classList.remove("hidden");
+    // Keyboard tip only when the answer is typed in French/German
+    const tip = SUBJECTS[currentSubjectKey].typeTip;
+    const tipEl = document.getElementById("typeTip");
+    const answerIsForeign = dir.id === "english-foreign" || dir.id === "prompt-answer";
+    tipEl.textContent = tip || "";
+    tipEl.classList.toggle("hidden", !(tip && answerIsForeign));
+    const input = document.getElementById("typeInput");
+    input.value = "";
+    input.className = "";
+    input.disabled = false;
+    setTimeout(()=>input.focus(), 50);
+  }
+}
+
+function handleChoice(btn, chosen, correctText, item){
+  if(answered) return;
+  answered = true;
+  const isCorrect = chosen === correctText;
+  [...document.getElementById("choicesWrap").children].forEach(b=>{
+    b.disabled = true;
+    if(b.textContent === correctText) b.classList.add("correct");
+  });
+  if(!isCorrect) btn.classList.add("wrong");
+  registerAnswer(isCorrect, item);
+}
+
+document.getElementById("typeSubmit").addEventListener("click", submitTyped);
+document.getElementById("typeInput").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter"){ e.stopPropagation(); submitTyped(); }
+});
+document.getElementById("typeForm").addEventListener("submit", (e)=> e.preventDefault());
+function submitTyped(){
+  if(answered) return;
+  const item = quizQueue[quizIdx];
+  const dir = currentDirObj;
+  const input = document.getElementById("typeInput");
+  const raw = input.value;
+  if(!raw.trim()) return;
+  answered = true;
+  const isCorrect = dir.isAccepted(item, raw);
+  input.disabled = true;
+  input.className = isCorrect ? "correct" : "wrong";
+  if(!isCorrect){
+    const feedback = document.getElementById("feedback");
+    const hint = dir.nearMiss ? dir.nearMiss(item, raw) : null;
+    feedback.textContent = (hint ? hint + " " : "") + "Correct answer: " + dir.getAnswerText(item);
+    feedback.className = "feedback bad";
+  }
+  registerAnswer(isCorrect, item);
+}
+
+function registerAnswer(isCorrect, item){
+  if(isCorrect){
+    quizScore++;
+    const feedback = document.getElementById("feedback");
+    feedback.textContent = "Correct!";
+    feedback.className = "feedback good";
+  } else {
+    quizMissed.push(item);
+  }
+  document.getElementById("quizScore").textContent = "Score: " + quizScore;
+  recordResult(item, isCorrect);
+  const advance = ()=>{
+    quizIdx++;
+    if(quizIdx >= quizQueue.length){
+      finishQuiz();
+    } else {
+      renderQuestion();
+    }
+  };
+  if(isCorrect){
+    setTimeout(advance, 700);
+  } else {
+    document.getElementById("typeSubmit").classList.add("hidden");
+    waitForNext("nextBtn", advance);
+  }
+}
+
+function finishQuiz(){
+  document.getElementById("quizPlay").classList.add("hidden");
+  document.getElementById("quizResults").classList.remove("hidden");
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("resultScore").textContent = quizScore + " / " + quizQueue.length;
+  const pct = Math.round(100*quizScore/quizQueue.length);
+  let msg;
+  if(pct === 100) msg = "Perfect score! \u{1F31F}";
+  else if(pct >= 80) msg = "Great job — almost there!";
+  else if(pct >= 50) msg = "Good start — keep practicing.";
+  else msg = "Keep going, it'll stick with practice.";
+  document.getElementById("resultMsg").textContent = msg;
+  document.getElementById("resultProgress").textContent = countMastered() + " / " + ITEMS.length + " " + unitPlural() + " now mastered overall";
+
+  // de-dupe missed items from this run for the review list (shown using
+  // the week's canonical direction, same convention as the flashcards)
+  const dir0 = currentWeek.directions[0];
+  const seen = new Set();
+  const missedThisRun = quizMissed.filter(item=>{
+    if(seen.has(item.key)) return false;
+    seen.add(item.key);
+    return true;
+  });
+
+  const reviewWrap = document.getElementById("resultReviewWrap");
+  const reviewList = document.getElementById("reviewList");
+  reviewList.innerHTML = "";
+  if(missedThisRun.length === 0){
+    reviewWrap.classList.add("hidden");
+  } else {
+    reviewWrap.classList.remove("hidden");
+    missedThisRun.forEach(item=>{
+      const li = document.createElement("li");
+      const label = (dir0.getGroup(item) ? dir0.getGroup(item) + " — " : "") + dir0.getPrompt(item);
+      li.innerHTML = "<b>" + label + "</b><span>" + dir0.getAnswerText(item) + "</span>";
+      reviewList.appendChild(li);
+    });
+  }
+
+  const practiceBtn = document.getElementById("retryPracticeBtn");
+  const n = itemsNeedingPractice().length;
+  practiceBtn.textContent = "Practice " + unitPlural() + " that need it (" + n + ")";
+  practiceBtn.classList.toggle("hidden", n === 0);
+}
+
+// ================= SENTENCE PRACTICE (Translate / Identify) =================
+// Only used by weeks that define `sentences` (currently Latin Week 2) —
+// short sentences built from that week's own nouns/verb, so this tests
+// reading who's-doing-what-to-whom rather than isolated ending recall.
+const CASE_MEANINGS = {
+  nominative: "Nominative — the subject (the one doing the action)",
+  accusative: "Accusative — the direct object (what the action is done to)",
+  dative: "Dative — the indirect object (“to” or “for” someone)"
+};
+const TENSE_MEANINGS = {
+  present: "Present — happening now (“carries”)",
+  imperfect: "Imperfect — was happening, in progress in the past (“was carrying”)",
+  perfect: "Perfect — a completed action (“carried”)"
+};
+
+const DEGREE_MEANINGS = {
+  positive: "Positive — the plain adjective (e.g. brave)",
+  comparative: "Comparative — more / -er, often with quam = than (e.g. braver than)",
+  superlative: "Superlative — very / most / -est (e.g. very brave, bravest)"
+};
+
+function resetSentencePanels(){
+  cancelPendingNext();
+  ["translate","identify","endings","verbforms","builder"].forEach(name=>{
+    document.getElementById(name+"Intro").classList.remove("hidden");
+    document.getElementById(name+"Play").classList.add("hidden");
+    document.getElementById(name+"Results").classList.add("hidden");
+  });
+}
+
+function highlightWord(latin, word){
+  return latin.split(" ").map(tok=>{
+    const bare = tok.replace(/[.,]$/, "");
+    if(bare === word){
+      const punct = tok.slice(bare.length);
+      return '<span class="hl-word">' + bare + '</span>' + punct;
+    }
+    return tok;
+  }).join(" ");
+}
+
+// --- Translate mode: read the sentence, pick the correct English ---
+let translateQueue = [], translateIdx = 0, translateScore = 0;
+
+document.getElementById("startTranslateBtn").addEventListener("click", startTranslate);
+document.getElementById("translateAgainBtn").addEventListener("click", startTranslate);
+
+function startTranslate(){
+  translateQueue = shuffle(currentWeek.sentences).slice(0, 15);
+  translateIdx = 0;
+  translateScore = 0;
+  document.getElementById("translateIntro").classList.add("hidden");
+  document.getElementById("translateResults").classList.add("hidden");
+  document.getElementById("translatePlay").classList.remove("hidden");
+  renderTranslateQ();
+}
+
+function renderTranslateQ(){
+  const s = translateQueue[translateIdx];
+  document.getElementById("translateCounter").textContent = "Question " + (translateIdx+1) + " / " + translateQueue.length;
+  document.getElementById("translateScore").textContent = "Score: " + translateScore;
+  document.getElementById("translateProgressFill").style.width = (100*translateIdx/translateQueue.length) + "%";
+  document.getElementById("translateSentence").textContent = s.latin;
+  const fb = document.getElementById("translateFeedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+
+  const wrap = document.getElementById("translateChoices");
+  wrap.innerHTML = "";
+  const options = shuffle([s.english, ...s.distractors]);
+  let done = false;
+  options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = opt;
+    btn.addEventListener("click", ()=>{
+      if(done) return;
+      done = true;
+      const correct = opt === s.english;
+      [...wrap.children].forEach(b=>{
+        b.disabled = true;
+        if(b.textContent === s.english) b.classList.add("correct");
+      });
+      if(!correct) btn.classList.add("wrong");
+      if(correct){
+        translateScore++;
+        fb.textContent = "Correct!";
+        fb.className = "feedback good";
+      } else {
+        fb.textContent = "Correct answer: " + s.english;
+        fb.className = "feedback bad";
+      }
+      document.getElementById("translateScore").textContent = "Score: " + translateScore;
+      const advance = ()=>{
+        translateIdx++;
+        if(translateIdx >= translateQueue.length) finishTranslate();
+        else renderTranslateQ();
+      };
+      if(correct) setTimeout(advance, 700);
+      else waitForNext("translateNextBtn", advance);
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function finishTranslate(){
+  document.getElementById("translatePlay").classList.add("hidden");
+  document.getElementById("translateResults").classList.remove("hidden");
+  document.getElementById("translateProgressFill").style.width = "100%";
+  document.getElementById("translateResultScore").textContent = translateScore + " / " + translateQueue.length;
+  const pct = Math.round(100*translateScore/translateQueue.length);
+  document.getElementById("translateResultMsg").textContent =
+    pct === 100 ? "Perfect — you're really reading these! \u{1F31F}" :
+    pct >= 80 ? "Great job — almost there!" :
+    pct >= 50 ? "Good start — keep practicing." :
+    "Keep going, it'll click with practice.";
+}
+
+// --- Identify mode: what job is this highlighted word doing? ---
+let identifyQueue = [], identifyIdx = 0, identifyScore = 0;
+
+document.getElementById("startIdentifyBtn").addEventListener("click", startIdentify);
+document.getElementById("identifyAgainBtn").addEventListener("click", startIdentify);
+
+function startIdentify(){
+  const all = [];
+  currentWeek.sentences.forEach(s => s.parts.forEach(p => all.push({s, p})));
+  identifyQueue = shuffle(all).slice(0, 15);
+  identifyIdx = 0;
+  identifyScore = 0;
+  document.getElementById("identifyIntro").classList.add("hidden");
+  document.getElementById("identifyResults").classList.add("hidden");
+  document.getElementById("identifyPlay").classList.remove("hidden");
+  renderIdentifyQ();
+}
+
+function renderIdentifyQ(){
+  const {s, p} = identifyQueue[identifyIdx];
+  document.getElementById("identifyCounter").textContent = "Question " + (identifyIdx+1) + " / " + identifyQueue.length;
+  document.getElementById("identifyScore").textContent = "Score: " + identifyScore;
+  document.getElementById("identifyProgressFill").style.width = (100*identifyIdx/identifyQueue.length) + "%";
+  document.getElementById("identifySentence").innerHTML = highlightWord(s.latin, p.word);
+  document.getElementById("identifyQuestion").textContent =
+    p.kind === "degree" ? "Is “" + p.word + "” positive, comparative or superlative?" :
+    p.kind === "case" && p.agrees ? "What case is “" + p.word + "”? (It agrees with “" + p.agrees + "”.)" :
+    p.kind === "case" ? "What job is “" + p.word + "” doing here?" : "What tense is “" + p.word + "”?";
+  const fb = document.getElementById("identifyFeedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+
+  const meanings = p.kind === "case" ? (currentWeek.caseMeanings || CASE_MEANINGS) :
+                   p.kind === "degree" ? DEGREE_MEANINGS : TENSE_MEANINGS;
+  const wrap = document.getElementById("identifyChoices");
+  wrap.innerHTML = "";
+  const keys = shuffle(Object.keys(meanings));
+  let done = false;
+  keys.forEach(key=>{
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = meanings[key];
+    btn.addEventListener("click", ()=>{
+      if(done) return;
+      done = true;
+      const correct = key === p.answer;
+      [...wrap.children].forEach(b=>{
+        b.disabled = true;
+        if(b.textContent === meanings[p.answer]) b.classList.add("correct");
+      });
+      if(!correct) btn.classList.add("wrong");
+      if(correct){
+        identifyScore++;
+        fb.textContent = "Correct! — " + s.english;
+        fb.className = "feedback good";
+      } else {
+        fb.textContent = "Correct answer: " + meanings[p.answer] + " — " + s.english;
+        fb.className = "feedback bad";
+      }
+      document.getElementById("identifyScore").textContent = "Score: " + identifyScore;
+      const advance = ()=>{
+        identifyIdx++;
+        if(identifyIdx >= identifyQueue.length) finishIdentify();
+        else renderIdentifyQ();
+      };
+      if(correct) setTimeout(advance, 900);
+      else waitForNext("identifyNextBtn", advance);
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function finishIdentify(){
+  document.getElementById("identifyPlay").classList.add("hidden");
+  document.getElementById("identifyResults").classList.remove("hidden");
+  document.getElementById("identifyProgressFill").style.width = "100%";
+  document.getElementById("identifyResultScore").textContent = identifyScore + " / " + identifyQueue.length;
+  const pct = Math.round(100*identifyScore/identifyQueue.length);
+  document.getElementById("identifyResultMsg").textContent =
+    pct === 100 ? "Perfect — you've got the cases down! \u{1F31F}" :
+    pct >= 80 ? "Great job — almost there!" :
+    pct >= 50 ? "Good start — keep practicing." :
+    "Keep going, it'll click with practice.";
+}
+
+// --- Endings mode: English given, one Latin word blanked, pick the right form ---
+let endingsQueue = [], endingsIdx = 0, endingsScore = 0;
+
+document.getElementById("startEndingsBtn").addEventListener("click", startEndings);
+document.getElementById("endingsAgainBtn").addEventListener("click", startEndings);
+
+function blankWord(latin, word, lemma){
+  let done = false;
+  return latin.split(" ").map(tok=>{
+    const bare = tok.replace(/[.,]$/, "");
+    if(!done && bare === word){
+      done = true;
+      return '<span class="hl-word">______</span> <span class="lemma-hint">(' + lemma + ')</span>' + tok.slice(bare.length);
+    }
+    return tok;
+  }).join(" ");
+}
+
+function startEndings(){
+  const forms = currentWeek.forms || {};
+  const all = [];
+  currentWeek.sentences.forEach(s => s.parts.forEach(p => {
+    if(p.lemma && forms[p.lemma]) all.push({s, p});
+  }));
+  endingsQueue = shuffle(all).slice(0, 15);
+  endingsIdx = 0;
+  endingsScore = 0;
+  document.getElementById("endingsIntro").classList.add("hidden");
+  document.getElementById("endingsResults").classList.add("hidden");
+  document.getElementById("endingsPlay").classList.remove("hidden");
+  renderEndingsQ();
+}
+
+function renderEndingsQ(){
+  const {s, p} = endingsQueue[endingsIdx];
+  document.getElementById("endingsCounter").textContent = "Question " + (endingsIdx+1) + " / " + endingsQueue.length;
+  document.getElementById("endingsScore").textContent = "Score: " + endingsScore;
+  document.getElementById("endingsProgressFill").style.width = (100*endingsIdx/endingsQueue.length) + "%";
+  document.getElementById("endingsEnglish").textContent = s.english;
+  document.getElementById("endingsSentence").innerHTML = blankWord(s.latin, p.word, p.lemma);
+  const fb = document.getElementById("endingsFeedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+
+  const others = shuffle(currentWeek.forms[p.lemma].filter(f => f !== p.word)).slice(0, 3);
+  const options = shuffle([p.word].concat(others));
+  const wrap = document.getElementById("endingsChoices");
+  wrap.innerHTML = "";
+  let done = false;
+  options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = opt;
+    btn.addEventListener("click", ()=>{
+      if(done) return;
+      done = true;
+      const correct = opt === p.word;
+      [...wrap.children].forEach(b=>{
+        b.disabled = true;
+        if(b.textContent === p.word) b.classList.add("correct");
+      });
+      if(!correct) btn.classList.add("wrong");
+      document.getElementById("endingsSentence").innerHTML = highlightWord(s.latin, p.word);
+      if(correct){
+        endingsScore++;
+        fb.textContent = "Correct!";
+        fb.className = "feedback good";
+      } else {
+        fb.textContent = "Correct answer: " + p.word;
+        fb.className = "feedback bad";
+      }
+      document.getElementById("endingsScore").textContent = "Score: " + endingsScore;
+      const advance = ()=>{
+        endingsIdx++;
+        if(endingsIdx >= endingsQueue.length) finishEndings();
+        else renderEndingsQ();
+      };
+      if(correct) setTimeout(advance, 900);
+      else waitForNext("endingsNextBtn", advance);
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function finishEndings(){
+  document.getElementById("endingsPlay").classList.add("hidden");
+  document.getElementById("endingsResults").classList.remove("hidden");
+  document.getElementById("endingsProgressFill").style.width = "100%";
+  document.getElementById("endingsResultScore").textContent = endingsScore + " / " + endingsQueue.length;
+  const pct = Math.round(100*endingsScore/endingsQueue.length);
+  document.getElementById("endingsResultMsg").textContent =
+    pct === 100 ? "Perfect — every ending right! \u{1F31F}" :
+    pct >= 80 ? "Great job — almost there!" :
+    pct >= 50 ? "Good start — keep practicing." :
+    "Keep going, it'll click with practice.";
+}
+
+// --- Verb forms mode: the four question styles tests use for verbs ---
+//  translate: Latin form -> English          ("ceperunt" -> "they took")
+//  parse:     Latin form -> person + tense   ("3rd person plural · perfect")
+//  lemma:     which verb is it from?         ("ceperunt" -> capio), perfects & sum-family only
+//  toLatin:   English (verb given) -> Latin  ("they took (capio)" -> ceperunt)
+let vfQueue = [], vfIdx = 0, vfScore = 0;
+
+document.getElementById("startVerbformsBtn").addEventListener("click", startVerbforms);
+document.getElementById("verbformsAgainBtn").addEventListener("click", startVerbforms);
+
+function vfParseLabel(c){ return VF_PERSON_LABELS[c.person] + " · " + c.tense; }
+function vfAnalysis(c){ return c.latin + " = " + c.english + " (" + vfParseLabel(c) + ", from " + c.lemma + ")"; }
+
+// Distractors from the same verb: mix "right tense, wrong person" with
+// "right person, wrong tense" so it's really the ending being tested.
+function vfDistractorCells(cell, n){
+  const same = VERB_CELLS.filter(c => c.lemma === cell.lemma && c !== cell);
+  const samePerson = shuffle(same.filter(c => c.person === cell.person));
+  const sameTense = shuffle(same.filter(c => c.tense === cell.tense));
+  const ordered = [samePerson[0], sameTense[0], sameTense[1], samePerson[1]].concat(shuffle(same));
+  const out = [];
+  ordered.forEach(c => { if(c && out.length < n && out.indexOf(c) === -1) out.push(c); });
+  return out;
+}
+function vfLemmaDistractors(cell, n){
+  const be = ["sum","adsum","absum"];
+  const all = VERB_DEFS.map(v => v.lemma).filter(l => l !== cell.lemma);
+  const pool = be.indexOf(cell.lemma) !== -1
+    ? all.filter(l => be.indexOf(l) !== -1).concat(shuffle(all.filter(l => be.indexOf(l) === -1)))
+    : shuffle(all.filter(l => be.indexOf(l) === -1));
+  return pool.slice(0, n);
+}
+
+function startVerbforms(){
+  const picks = shuffle(VERB_CELLS).slice(0, 15);
+  vfQueue = picks.map(cell=>{
+    const lemmaOK = cell.tense === "perfect" || ["sum","adsum","absum"].indexOf(cell.lemma) !== -1;
+    const types = lemmaOK ? ["translate","translate","parse","lemma","toLatin"] : ["translate","translate","parse","toLatin"];
+    return {cell, type: types[Math.floor(Math.random()*types.length)]};
+  });
+  vfIdx = 0;
+  vfScore = 0;
+  document.getElementById("verbformsIntro").classList.add("hidden");
+  document.getElementById("verbformsResults").classList.add("hidden");
+  document.getElementById("verbformsPlay").classList.remove("hidden");
+  renderVerbformsQ();
+}
+
+function renderVerbformsQ(){
+  const {cell, type} = vfQueue[vfIdx];
+  document.getElementById("verbformsCounter").textContent = "Question " + (vfIdx+1) + " / " + vfQueue.length;
+  document.getElementById("verbformsScore").textContent = "Score: " + vfScore;
+  document.getElementById("verbformsProgressFill").style.width = (100*vfIdx/vfQueue.length) + "%";
+  const fb = document.getElementById("verbformsFeedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+
+  const label = document.getElementById("verbformsLabel");
+  const prompt = document.getElementById("verbformsPrompt");
+  let correctText, optionTexts;
+  if(type === "toLatin"){
+    label.textContent = "Which Latin form means…";
+    prompt.innerHTML = '<span class="vf-english">' + cell.english + '</span> <span class="lemma-hint">(' + cell.lemma + ')</span>';
+    correctText = cell.latin;
+    optionTexts = vfDistractorCells(cell, 3).map(c => c.latin);
+  } else {
+    prompt.textContent = cell.latin;
+    if(type === "translate"){
+      label.textContent = "What does this mean?";
+      correctText = cell.english;
+      optionTexts = vfDistractorCells(cell, 3).map(c => c.english);
+    } else if(type === "parse"){
+      label.textContent = "Person, number and tense?";
+      correctText = vfParseLabel(cell);
+      optionTexts = vfDistractorCells(cell, 3).map(vfParseLabel);
+    } else {
+      label.textContent = "Which verb is this from? (1st person singular present)";
+      correctText = cell.lemma;
+      optionTexts = vfLemmaDistractors(cell, 3);
+    }
+  }
+  const options = shuffle([correctText].concat(optionTexts));
+
+  const wrap = document.getElementById("verbformsChoices");
+  wrap.innerHTML = "";
+  let done = false;
+  options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = opt;
+    btn.addEventListener("click", ()=>{
+      if(done) return;
+      done = true;
+      const correct = opt === correctText;
+      [...wrap.children].forEach(b=>{
+        b.disabled = true;
+        if(b.textContent === correctText) b.classList.add("correct");
+      });
+      if(!correct) btn.classList.add("wrong");
+      if(correct){
+        vfScore++;
+        fb.textContent = "Correct! " + vfAnalysis(cell);
+        fb.className = "feedback good";
+      } else {
+        fb.textContent = "Correct answer: " + correctText + " — " + vfAnalysis(cell);
+        fb.className = "feedback bad";
+      }
+      document.getElementById("verbformsScore").textContent = "Score: " + vfScore;
+      const advance = ()=>{
+        vfIdx++;
+        if(vfIdx >= vfQueue.length) finishVerbforms();
+        else renderVerbformsQ();
+      };
+      if(correct) setTimeout(advance, 1400);
+      else waitForNext("verbformsNextBtn", advance);
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function finishVerbforms(){
+  document.getElementById("verbformsPlay").classList.add("hidden");
+  document.getElementById("verbformsResults").classList.remove("hidden");
+  document.getElementById("verbformsProgressFill").style.width = "100%";
+  document.getElementById("verbformsResultScore").textContent = vfScore + " / " + vfQueue.length;
+  const pct = Math.round(100*vfScore/vfQueue.length);
+  document.getElementById("verbformsResultMsg").textContent =
+    pct === 100 ? "Perfect — you know your endings! \u{1F31F}" :
+    pct >= 80 ? "Great job — almost there!" :
+    pct >= 50 ? "Good start — keep practicing." :
+    "Keep going, it'll click with practice.";
+}
+
+// --- Sentence builder: identify every word, then write the Latin ---
+const SB_FIELDS = {
+  noun: [
+    {key:"kase", label:"Case", opts:[["nom","Nom."],["acc","Acc."],["gen","Gen."],["dat","Dat."]]},
+    {key:"decl", label:"Declension", opts:[["1","1st"],["2","2nd"],["3","3rd"]]},
+    {key:"num",  label:"Number", opts:[["sg","Singular"],["pl","Plural"]]},
+  ],
+  adj: [
+    {key:"degree", label:"Degree", opts:[["positive","Positive"],["comparative","Comparative"],["superlative","Superlative"]]},
+  ],
+  verb: [
+    {key:"tense",  label:"Tense", opts:[["present","Present"],["imperfect","Imperfect"],["perfect","Perfect"]]},
+    {key:"person", label:"Person", opts:[["1","1st"],["2","2nd"],["3","3rd"]]},
+    {key:"num",    label:"Number", opts:[["sg","Singular"],["pl","Plural"]]},
+  ],
+};
+let sbQueue = [], sbIdx = 0, sbScore = 0, sbTotal = 0, sbPerfect = 0, sbChecked = false;
+let sbMode = "normal";
+const SB_INTRO = {
+  normal: "You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; tense, person and singular/plural for the verb. <b>2.</b> Write the whole sentence in Latin with the right endings.",
+  bonus: "<b>Bonus &mdash; like the test's bonus questions.</b> Only the verb is given. The nouns (and adjectives) are all from your checklist &mdash; the words <b>not</b> in italics &mdash; so you need to know them yourself. Identify each word, then write the Latin.",
+};
+// Switch the shared builder panel between normal and bonus. Only resets
+// the round if the mode actually changes (or when forced on opening a set).
+function setBuilderMode(mode, force){
+  if(mode === sbMode && !force) return;
+  sbMode = mode;
+  document.getElementById("builderIntroText").innerHTML = SB_INTRO[mode];
+  document.getElementById("startBuilderBtn").textContent = mode === "bonus" ? "Start bonus (10 sentences)" : "Start (10 sentences)";
+  document.getElementById("builderAgainBtn").textContent = mode === "bonus" ? "10 new bonus sentences" : "10 new sentences";
+  document.getElementById("builderIntro").classList.remove("hidden");
+  document.getElementById("builderPlay").classList.add("hidden");
+  document.getElementById("builderResults").classList.add("hidden");
+  document.getElementById("builderNextBtn").classList.add("hidden");
+}
+
+document.getElementById("startBuilderBtn").addEventListener("click", startBuilder);
+document.getElementById("builderAgainBtn").addEventListener("click", startBuilder);
+document.getElementById("builderCheck").addEventListener("click", checkBuilder);
+document.getElementById("builderForm").addEventListener("submit", e => e.preventDefault());
+document.getElementById("builderInput").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter"){ e.stopPropagation(); e.preventDefault(); checkBuilder(); }
+});
+
+function startBuilder(){
+  sbQueue = sbMakeRound(sbMode === "bonus", 10);
+  sbIdx = 0; sbScore = 0; sbTotal = 0; sbPerfect = 0;
+  document.getElementById("builderIntro").classList.add("hidden");
+  document.getElementById("builderResults").classList.add("hidden");
+  document.getElementById("builderPlay").classList.remove("hidden");
+  renderBuilderQ();
+}
+
+function sbWordTitle(part, bonus){
+  if(part.type === "adj"){
+    if(bonus) return "“" + SB_ADJS[part.lemma].mean + "” <span>(adjective — Latin not given)</span>";
+    return part.lemma + " <span>(" + SB_ADJS[part.lemma].mean + ", adjective)</span>";
+  }
+  if(part.type === "noun"){
+    // in bonus mode the Latin noun isn't given, so label it by its English
+    if(bonus) return "“" + SB_NOUNS[part.lemma].mean + "” <span>(noun — Latin not given)</span>";
+    return part.lemma + " <span>(" + SB_NOUNS[part.lemma].mean + ")</span>";
+  }
+  const entry = SB_VERB_ENTRY[part.lemma];
+  return part.lemma + " <span>(" + entry.split(" = ")[1].replace(/^I /, "") + ")</span>";
+}
+
+function renderBuilderQ(){
+  sbChecked = false;
+  const q = sbQueue[sbIdx];
+  document.getElementById("builderCounter").textContent = "Sentence " + (sbIdx+1) + " / " + sbQueue.length;
+  document.getElementById("builderScore").textContent = "Score: " + sbScore + (sbTotal ? " / " + sbTotal : "");
+  document.getElementById("builderProgressFill").style.width = (100*sbIdx/sbQueue.length) + "%";
+  document.getElementById("builderEnglish").textContent = q.english;
+  document.getElementById("builderVocab").innerHTML = q.vocab.map(v => "<li>" + v + "</li>").join("") +
+    (q.bonus ? "<li><i>Nouns" + (q.hasAdj ? " and adjective" : "") + ": not given — from your checklist</i></li>" : "");
+
+  const wrap = document.getElementById("builderParts");
+  wrap.innerHTML = "";
+  q.parts.forEach(part=>{
+    const box = document.createElement("div");
+    box.className = "sb-part";
+    box.innerHTML = '<div class="sb-part-title">' + sbWordTitle(part, q.bonus) + '</div>';
+    SB_FIELDS[part.type].forEach(f=>{
+      const row = document.createElement("div");
+      row.className = "sb-row";
+      row.dataset.ans = part.ans[f.key];
+      row.innerHTML = '<span class="sb-row-label">' + f.label + '</span>';
+      const opts = document.createElement("div");
+      opts.className = "sb-opts";
+      f.opts.forEach(([val, lab])=>{
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.val = val;
+        b.textContent = lab;
+        b.addEventListener("click", ()=>{
+          if(sbChecked) return;
+          [...opts.children].forEach(x => x.classList.remove("selected"));
+          b.classList.add("selected");
+          row.dataset.sel = val;
+        });
+        opts.appendChild(b);
+      });
+      row.appendChild(opts);
+      box.appendChild(row);
+    });
+    wrap.appendChild(box);
+  });
+
+  const input = document.getElementById("builderInput");
+  input.value = ""; input.className = ""; input.disabled = false;
+  document.getElementById("builderCheck").classList.remove("hidden");
+  document.getElementById("builderNextBtn").classList.add("hidden");
+  const fb = document.getElementById("builderFeedback");
+  fb.textContent = ""; fb.className = "feedback";
+  const bd = document.getElementById("builderBreakdown");
+  bd.innerHTML = ""; bd.classList.add("hidden");
+}
+
+function sbExplain(part){
+  if(part.type === "adj"){
+    const num = part.num ? "plural" : "singular";
+    return "<b>" + part.latin + "</b> — " + part.ans.degree + " of " + part.lemma + ", " + SB_CASE_NAMES[part.kase] + " " + num +
+      ", agreeing with " + part.agrees + (part.predicative ? " (the subject)" : "");
+  }
+  if(part.type === "noun" && part.afterQuam){
+    return "<b>" + part.latin + "</b> — nominative after quam (same case as the subject it's compared with), " +
+      (part.ans.num === "pl" ? "plural" : "singular") + " of " + part.lemma;
+  }
+  if(part.type === "noun"){
+    const n = SB_NOUNS[part.lemma];
+    return "<b>" + part.latin + "</b> — " + SB_CASE_NAMES[part.ans.kase] + " " + (part.ans.num === "pl" ? "plural" : "singular") +
+      " of " + part.lemma + " (" + ["","1st","2nd","3rd"][n.decl] + " declension" + (n.neuter ? ", neuter" : "") + ")";
+  }
+  const pers = ["","1st","2nd","3rd"][+part.ans.person];
+  return "<b>" + part.latin + "</b> — " + part.ans.tense + " tense, " + pers + " person " + (part.ans.num === "pl" ? "plural" : "singular") + " of " + part.lemma;
+}
+
+function checkBuilder(){
+  if(sbChecked) return;
+  const q = sbQueue[sbIdx];
+  const fb = document.getElementById("builderFeedback");
+  const rows = [...document.querySelectorAll("#builderParts .sb-row")];
+  const input = document.getElementById("builderInput");
+  if(rows.some(r => !r.dataset.sel)){
+    fb.textContent = "Pick one answer in every row first.";
+    fb.className = "feedback bad";
+    return;
+  }
+  if(!input.value.trim()){
+    fb.textContent = "Now type the sentence in Latin.";
+    fb.className = "feedback bad";
+    return;
+  }
+  sbChecked = true;
+  let got = 0;
+  const total = rows.length + 1;
+  rows.forEach(r=>{
+    const ok = r.dataset.sel === r.dataset.ans;
+    if(ok) got++;
+    [...r.querySelectorAll("button")].forEach(b=>{
+      b.disabled = true;
+      b.classList.remove("selected");
+      if(b.dataset.val === r.dataset.ans) b.classList.add("correct");
+      else if(b.dataset.val === r.dataset.sel) b.classList.add("wrong");
+    });
+  });
+
+  // Latin sentence: same words with the right endings, any order
+  const typed = normalize(input.value).split(" ").filter(Boolean);
+  const bag = typed.slice();
+  const missing = [];
+  q.latinWords.forEach(w=>{
+    const i = bag.indexOf(w);
+    if(i >= 0) bag.splice(i, 1); else missing.push(w);
+  });
+  const sentenceOK = missing.length === 0 && bag.length === 0;
+  if(sentenceOK) got++;
+  input.disabled = true;
+  input.className = sentenceOK ? "correct" : "wrong";
+
+  sbScore += got; sbTotal += total;
+  if(got === total) sbPerfect++;
+  document.getElementById("builderScore").textContent = "Score: " + sbScore + " / " + sbTotal;
+
+  const allRight = got === total;
+  fb.textContent = allRight ? "Perfect — all " + total + " right!" : got + " / " + total + " right";
+  fb.className = "feedback " + (allRight ? "good" : "bad");
+
+  const bd = document.getElementById("builderBreakdown");
+  let html = "<b>Latin:</b> " + q.latinWords.join(" ") + ".";
+  if(!sentenceOK){
+    if(missing.length) html += "<br>Missing or wrong ending: <b>" + missing.join(", ") + "</b>";
+    if(bag.length) html += "<br>Not right: " + bag.join(", ");
+  }
+  html += "<ul>" + q.parts.map(p => "<li>" + sbExplain(p) + "</li>").join("") +
+"</ul>";
+  bd.innerHTML = html;
+  bd.classList.remove("hidden");
+  document.getElementById("builderCheck").classList.add("hidden");
+
+  const advance = ()=>{
+    sbIdx++;
+    if(sbIdx >= sbQueue.length) finishBuilder();
+    else { renderBuilderQ(); document.getElementById("builderPlay").scrollIntoView({block:"start"}); }
+  };
+  if(allRight) setTimeout(advance, 2200);
+  else waitForNext("builderNextBtn", advance);
+}
+
+function finishBuilder(){
+  document.getElementById("builderPlay").classList.add("hidden");
+  document.getElementById("builderResults").classList.remove("hidden");
+  document.getElementById("builderProgressFill").style.width = "100%";
+  document.getElementById("builderResultScore").textContent = sbScore + " / " + sbTotal;
+  const pct = Math.round(100*sbScore/sbTotal);
+  document.getElementById("builderResultMsg").textContent =
+    pct === 100 ? "Perfect — every word right! \u{1F31F}" :
+    pct >= 80 ? "Great job — almost there!" :
+    pct >= 50 ? "Good start — keep practicing." :
+    "Keep going, it'll click with practice.";
+  document.getElementById("builderResultDetail").textContent = sbPerfect + " of " + sbQueue.length + " sentences completely right";
+}
+</script>
+</body>
+</html>

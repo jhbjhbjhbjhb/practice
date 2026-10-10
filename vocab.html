@@ -141,8 +141,8 @@
   }
   .board-card .emoji { font-size: 1.9rem; line-height: 1; }
   .board-card .titles { flex: 1; min-width: 0; }
-  .board-card .t1 { font-size: 1.15rem; font-weight: 800; }
-  .board-card .t2 { font-size: 0.82rem; color: var(--ink-soft); margin-top: 3px; }
+  .board-card .t1 { display: block; font-size: 1.15rem; font-weight: 800; }
+  .board-card .t2 { display: block; font-size: 0.82rem; color: var(--ink-soft); margin-top: 3px; }
   .board-card .arrow { color: var(--ink-soft); font-size: 1.3rem; }
 
   /* --- Tabs (underline style) --- */
@@ -1839,16 +1839,26 @@ function sbMakeSentence(opts){
   const bonus = !!(opts && opts.bonus);
   const ok = l => !bonus || !LATIN_ITALIC.has(l);
   const people = SB_PEOPLE.filter(ok);
-  const adjsFor = (degree, nounLemma) => Object.keys(SB_ADJS).filter(a => {
+  const adjsFor = (degree, nounLemma, plainNomSg) => Object.keys(SB_ADJS).filter(a => {
     const A = SB_ADJS[a];
     if(!ok(a) || !A.en[degree]) return false;
+    // positive fortis declines like the 3-3 table (fortem, fortes…), which isn't
+    // on the test — only use it where the form is just "fortis"
+    if(degree === "positive" && A.type === "3" && !plainNomSg) return false;
     return SB_NOUNS[nounLemma].person ? !!A.people : !!(A.things && A.things.includes(nounLemma));
   });
   for(let tries = 0; tries < 400; tries++){
     const v = sbRand(SB_VERBS);
     const def = VERB_DEFS.find(d => d.lemma === v.lemma);
-    let tenses = def.irregular ? ["present","imperfect"] : ["present","imperfect","perfect"];
+    // Only endings he has been taught: the present & imperfect only for
+    // verbs like porto (1st conjugation, page 9) and sum / adsum / absum
+    // (page 10). Every other verb is perfect only — the sheet gives its
+    // perfect (misi, cepi…) and the perfect endings are the same for all verbs.
+    let tenses = def.irregular ? ["present","imperfect"]
+               : def.conj === 1 ? ["present","imperfect","perfect"]
+               : ["perfect"];
     if(v.noImperfect) tenses = tenses.filter(t => t !== "imperfect");
+    if(!tenses.length) continue;
     const tense = sbRand(tenses);
     const used = new Set();
     let possUsed = false;
@@ -1909,9 +1919,15 @@ function sbMakeSentence(opts){
     } else if(v.frame === "beAdj"){
       // "X is/was tired" · "X was very angry" · "X was braver than Y"
       const degree = sbRand(["positive","comparative","superlative"]);
-      const adjs = adjsFor(degree, subj.lemma);
+      const adjs = adjsFor(degree, subj.lemma, true);
       if(!adjs.length) continue;
       pred = {adj: sbRand(adjs), degree};
+      // page 8 only shows "fortior" (singular), and positive "fortis" only in that
+      // form, so these predicate sentences keep a singular subject
+      if(degree === "comparative" || (degree === "positive" && SB_ADJS[pred.adj].type === "3")){
+        if(subj.poss) continue;
+        subj.num = 0;
+      }
       if(degree === "comparative"){
         const ql = sbRand(people.filter(l => !used.has(l))); used.add(ql);
         pred.quam = {lemma: ql, num: pickNum(ql, false), kase: "nom", afterQuam: true};
@@ -1927,7 +1943,7 @@ function sbMakeSentence(opts){
     if(v.frame !== "beAdj" && Math.random() < 0.45){
       for(const np of shuffle([subj, obj, dat].filter(np => np && !np.poss))){
         const degree = sbRand(["positive","superlative"]);
-        const adjs = adjsFor(degree, np.lemma);
+        const adjs = adjsFor(degree, np.lemma, false);
         if(!adjs.length) continue;
         np.adj = {adj: sbRand(adjs), degree};
         break;
@@ -3384,7 +3400,12 @@ function sbExplain(part){
       " of " + part.lemma + " (" + ["","1st","2nd","3rd"][n.decl] + " declension" + (n.neuter ? ", neuter" : "") + ")";
   }
   const pers = ["","1st","2nd","3rd"][+part.ans.person];
-  return "<b>" + part.latin + "</b> — " + part.ans.tense + " tense, " + pers + " person " + (part.ans.num === "pl" ? "plural" : "singular") + " of " + part.lemma;
+  const def = VERB_DEFS.find(d => d.lemma === part.lemma);
+  let how = "";
+  if(def && def.irregular) how = " (learn by heart: page 10)";
+  else if(def && part.ans.tense === "perfect") how = " (perfect stem " + def.perf + "- from " + def.perf + "i, + the perfect ending)";
+  else if(def) how = " (endings like porto)";
+  return "<b>" + part.latin + "</b> — " + part.ans.tense + " tense, " + pers + " person " + (part.ans.num === "pl" ? "plural" : "singular") + " of " + part.lemma + how;
 }
 
 function checkBuilder(){

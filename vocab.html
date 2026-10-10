@@ -746,7 +746,7 @@
     <!-- SENTENCE BUILDER (English -> Latin, Section B style) -->
     <div class="panel" id="panel-builder">
       <div class="card" id="builderIntro">
-        <p class="sentence-intro" id="builderIntroText">You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; tense, person and singular/plural for the verb. <b>2.</b> Write the whole sentence in Latin with the right endings.</p>
+        <p class="sentence-intro" id="builderIntroText">You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; person and singular/plural for the verb (its tense is shown in brackets). <b>2.</b> Write the whole sentence in Latin with the right endings.</p>
         <p class="sentence-intro">Only the 1st, 2nd and 3rd declensions, regular verbs, and sum / adsum / absum. New sentences every round.</p>
         <button class="primary-btn" id="startBuilderBtn">Start (10 sentences)</button>
       </div>
@@ -1771,7 +1771,7 @@ const SB_VERBS = [
   {lemma:"do", frame:"give", en:["give","gives","giving","gave"], objects:["donum","liber","pecunia"]},
   {lemma:"credo", frame:"datP", en:["trust","trusts","trusting","trusted"], noImperfect:true},
   {lemma:"respondeo", frame:"datP", en:["reply to","replies to","replying to","replied to"]},
-  {lemma:"adsum", frame:"be", adj:"present"},
+  {lemma:"adsum", frame:"be", adj:"here"}, // "present" would clash with the (present) tense label
   {lemma:"absum", frame:"be", adj:"absent"},
   {lemma:"sum", frame:"beAdj"}, // "X is tired", "X was very angry", "X was braver than Y"
 ];
@@ -1789,7 +1789,7 @@ const SB_VERB_ENTRY = {
   surgo:"surgo (perfect: surrexi) = I get up", timeo:"timeo (perfect: timui) = I fear, am afraid",
   traho:"traho (perfect: traxi) = I drag", venio:"venio (perfect: veni) = I come",
   video:"video (perfect: vidi) = I see", voco:"voco (perfect: vocavi) = I call",
-  sum:"sum = I am", adsum:"adsum = I am present", absum:"absum = I am absent",
+  sum:"sum = I am", adsum:"adsum = I am present, I am here", absum:"absum = I am absent",
 };
 const SB_PRONOUNS = ["I","You (sg)","He/she","We","You (pl)","They"];
 
@@ -1822,7 +1822,11 @@ function sbAdjForm(adj, degree, g, kase, num){
 function sbNP(np){ // English noun phrase, e.g. "the king's sons", "the very brave slaves"
   const n = SB_NOUNS[np.lemma];
   const noun = n.en[Math.min(np.num, n.en.length-1)];
-  if(np.poss){ const p = SB_NOUNS[np.poss.lemma]; return "the " + p.poss[np.poss.num] + " " + noun; }
+  if(np.poss){
+    const p = SB_NOUNS[np.poss.lemma];
+    if(np.poss.num) return "the " + noun + " of the " + p.en[1];   // plural owner: "the money of the slaves"
+    return "the " + p.poss[0] + " " + noun;                          // "the king's money"
+  }
   if(np.adj) return "the " + SB_ADJS[np.adj.adj].en[np.adj.degree] + " " + noun;
   return "the " + noun;
 }
@@ -1959,18 +1963,22 @@ function sbMakeSentence(opts){
     if(subj) p = subj.num ? 5 : 2; // numbers above may have changed
 
     // --- English ---
+    // The verb always carries its tense in brackets, just as "you" carries
+    // (sg)/(pl): English can't always show it ("lead" looks like "led", and
+    // "feared" could fairly be imperfect or perfect in Latin).
+    const tag = " (" + tense + ")";
     let verbEn;
-    if(v.frame === "be"){
-      verbEn = (tense === "present" ? VF_BE_PRESENT[p] : VF_BE_PAST[p]) + " " + v.adj;
-    } else if(v.frame === "beAdj"){
-      verbEn = (tense === "present" ? VF_BE_PRESENT[p] : VF_BE_PAST[p]) + " " + SB_ADJS[pred.adj].en[pred.degree] +
-        (pred.quam ? " than " + sbNP(pred.quam) : "");
-    } else if(tense === "present"){
-      verbEn = p === 2 ? v.en[1] : v.en[0];
-    } else if(tense === "imperfect"){
-      verbEn = VF_BE_PAST[p] + " " + v.en[2];
+    if(v.frame === "be" || v.frame === "beAdj"){
+      const be = tense === "present" ? VF_BE_PRESENT[p] : VF_BE_PAST[p];
+      const rest = v.frame === "be" ? v.adj
+        : SB_ADJS[pred.adj].en[pred.degree] + (pred.quam ? " than " + sbNP(pred.quam) : "");
+      verbEn = be + tag + " " + rest;
     } else {
-      verbEn = v.en[3];
+      const core = tense === "present" ? (p === 2 ? v.en[1] : v.en[0])
+                 : tense === "imperfect" ? VF_BE_PAST[p] + " " + v.en[2]
+                 : v.en[3];
+      const m = core.match(/^(.*) (to|at)$/);   // "replied to", "looked at": tag before the little word
+      verbEn = m ? m[1] + tag + " " + m[2] : core + tag;
     }
     const subjEn = subj ? sbNP(subj) : SB_PRONOUNS[p];
     let english = subjEn + " " + verbEn;
@@ -2001,9 +2009,11 @@ function sbMakeSentence(opts){
       agrees: nounLatin, kase, num, predicative});
     const addNP = np => {
       if(!np) return;
-      if(np.poss) parts.push(nounPart({lemma: np.poss.lemma, kase: "gen", num: np.poss.num}));
+      const possPart = np.poss ? nounPart({lemma: np.poss.lemma, kase: "gen", num: np.poss.num}) : null;
+      if(possPart && !np.poss.num) parts.push(possPart);   // "the king's money": owner comes first in the English
       if(np.adj) parts.push(adjPart(np.adj, sbNounForm(np.lemma, np.kase, np.num), SB_NOUNS[np.lemma].g, np.kase, np.num, false));
       parts.push(nounPart(np));
+      if(possPart && np.poss.num) parts.push(possPart);    // "the money of the slaves": owner comes after
     };
     addNP(subj); addNP(obj); addNP(dat);
     if(pred){
@@ -3276,7 +3286,6 @@ const SB_FIELDS = {
     {key:"degree", label:"Degree", opts:[["positive","Positive"],["comparative","Comparative"],["superlative","Superlative"]]},
   ],
   verb: [
-    {key:"tense",  label:"Tense", opts:[["present","Present"],["imperfect","Imperfect"],["perfect","Perfect"]]},
     {key:"person", label:"Person", opts:[["1","1st"],["2","2nd"],["3","3rd"]]},
     {key:"num",    label:"Number", opts:[["sg","Singular"],["pl","Plural"]]},
   ],
@@ -3284,7 +3293,7 @@ const SB_FIELDS = {
 let sbQueue = [], sbIdx = 0, sbScore = 0, sbTotal = 0, sbPerfect = 0, sbChecked = false;
 let sbMode = "normal";
 const SB_INTRO = {
-  normal: "You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; tense, person and singular/plural for the verb. <b>2.</b> Write the whole sentence in Latin with the right endings.",
+  normal: "You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; person and singular/plural for the verb (its tense is shown in brackets). <b>2.</b> Write the whole sentence in Latin with the right endings.",
   bonus: "<b>Bonus &mdash; like the test's bonus questions.</b> Only the verb is given. The nouns (and adjectives) are all from your checklist &mdash; the words <b>not</b> in italics &mdash; so you need to know them yourself. Identify each word, then write the Latin.",
 };
 // Switch the shared builder panel between normal and bonus. Only resets
@@ -3329,7 +3338,7 @@ function sbWordTitle(part, bonus){
     return part.lemma + " <span>(" + SB_NOUNS[part.lemma].mean + ")</span>";
   }
   const entry = SB_VERB_ENTRY[part.lemma];
-  return part.lemma + " <span>(" + entry.split(" = ")[1].replace(/^I /, "") + ")</span>";
+  return part.lemma + " <span>(" + entry.split(" = ")[1] + ")</span>";
 }
 
 function renderBuilderQ(){

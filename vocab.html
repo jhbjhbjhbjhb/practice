@@ -540,6 +540,38 @@
   .mlegend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 7px; font-size: 0.76rem; color: var(--chalk-dim); }
   .mlegend .k { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
   .k.m { background: #3f9d63; } .k.l { background: var(--gold); } .k.w { background: var(--bad); } .k.f { background: rgba(255,255,255,0.3); }
+  /* five steps: grey not tried · red to fix · orange on the way (1 in a row) · yellow nearly there (2) · green mastered */
+  .mbar .seg.n, .k.n { background: #f2d04b; }
+  .mbar .seg.o, .k.o { background: #ef8f2f; }
+  .status-nearly { background: rgba(242,208,75,0.32); color: #665200; }
+  .status-way { background: rgba(239,143,47,0.2); color: #8a4a0c; }
+  .dots.d1 { color: #ef8f2f; } .dots.d2 { color: #d9b21d; } .dots.d3 { color: #3f9d63; }
+  /* --- Latin -> English --- */
+  .rd-cov { background: #fffdf8; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin: 0 0 14px; font-size: 0.86rem; color: var(--ink); }
+  .rd-cov-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+  .rd-cov-head .rule { font-size: 0.72rem; color: var(--ink-soft); text-align: right; }
+  .rd-cov .mlegend { color: var(--ink-soft); }
+  .rd-cov .k.f, .rd-cov .seg.f { background: #d9d0bb; }
+  .rd-cov details { margin-top: 8px; }
+  .rd-cov summary { cursor: pointer; font-weight: 700; color: var(--ink-soft); font-size: 0.8rem; }
+  .rd-group { margin-top: 8px; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+  .rd-chip { display: inline-block; padding: 2px 8px; margin: 3px 3px 0 0; border-radius: 999px; font-size: 0.8rem; font-weight: 700; background: #ece5d3; color: var(--ink); }
+  .rd-chip.r { background: var(--good-bg); color: #205c37; }
+  .rd-chip.w { background: var(--bad-bg); color: #8f2e24; }
+  #readingInput { flex: 1; width: 100%; padding: 12px 13px; border-radius: 9px; border: 2px solid var(--line); font-family: var(--font-body); font-size: 1rem; line-height: 1.35; background: #fffdf8; color: var(--ink); resize: none; }
+  #readingInput.correct { border-color: var(--good); background: var(--good-bg); }
+  #readingInput.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .rd-model { margin-bottom: 6px; }
+  .rd-rows { list-style: none; padding: 0; margin: 6px 0 0; }
+  .rd-rows li { display: flex; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); }
+  .rd-rows li:first-child { border-top: none; }
+  .rd-mark { flex: none; width: 16px; font-weight: 800; }
+  .rd-rows li.ok .rd-mark { color: var(--good); }
+  .rd-rows li.bad .rd-mark { color: var(--bad); }
+  .rd-why { display: block; color: #8f2e24; font-size: 0.82rem; }
+  .rd-extra { margin-top: 6px; color: #8f2e24; font-size: 0.84rem; }
+  #readingOverride { margin: 0 0 10px; }
+  .rd-rows li > span > span:not(.rd-why) { color: var(--ink-soft); font-size: 0.82rem; }
   .on-card-legend { color: var(--ink-soft); }
   .on-card-legend .k.f { background: #d9d0bb; }
   .mastery-extra { margin-top: 8px; font-size: 0.82rem; color: var(--chalk-dim); }
@@ -586,7 +618,8 @@
     <p class="sync-note" id="syncNote"></p>
 
     <div class="tabs">
-      <button class="tab-btn hidden" data-tab="builder" data-mode="normal" id="tabBuilder">Build sentences</button>
+      <button class="tab-btn hidden" data-tab="builder" data-mode="normal" id="tabBuilder">English &rarr; Latin</button>
+      <button class="tab-btn hidden" data-tab="reading" id="tabReading">Latin &rarr; English</button>
       <button class="tab-btn hidden" data-tab="builder" data-mode="bonus" id="tabBonus">Bonus</button>
       <button class="tab-btn active" data-tab="flash">Flashcards</button>
       <button class="tab-btn" data-tab="quiz">Quiz</button>
@@ -816,6 +849,43 @@
           <div class="score-sub" id="builderResultMsg">Nice work!</div>
           <div class="score-progress" id="builderResultDetail"></div>
           <button class="primary-btn" id="builderAgainBtn">10 new sentences</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LATIN -> ENGLISH (typed, marked word by word) -->
+    <div class="panel" id="panel-reading">
+      <div class="card" id="readingIntro">
+        <p class="sentence-intro">Read the Latin and type it in English. It's marked <b>word by word</b>: small English slips and typos don't matter, but who does what to whom, the tense, singular/plural and what each word means all do.</p>
+        <div class="rd-cov" id="readingCov"></div>
+        <button class="primary-btn" id="startReadingBtn">Start (6 sentences)</button>
+      </div>
+      <div id="readingPlay" class="hidden">
+        <div class="quiz-progress">
+          <span id="readingCounter">Sentence 1 / 6</span>
+          <span id="readingScore">Score: 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="readingProgressFill" style="width:0%"></div></div>
+        <div class="card">
+          <div class="prompt-label">Latin</div>
+          <div class="sentence-latin" id="readingLatin">...</div>
+          <div class="type-row">
+            <textarea id="readingInput" rows="2" placeholder="Type it in English" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" name="english-translation" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></textarea>
+          </div>
+          <button class="primary-btn" id="readingCheck">Check</button>
+          <div class="feedback" id="readingFeedback"></div>
+          <div class="sb-breakdown hidden" id="readingBreakdown"></div>
+          <button class="secondary-btn hidden" id="readingOverride">I think mine was right</button>
+          <button class="primary-btn hidden" id="readingNextBtn">Next &rarr;</button>
+        </div>
+      </div>
+      <div id="readingResults" class="hidden">
+        <div class="card">
+          <div class="score-big" id="readingResultScore">0 / 6</div>
+          <div class="score-sub" id="readingResultMsg">Nice work!</div>
+          <div class="score-progress" id="readingResultDetail"></div>
+          <div class="rd-cov" id="readingResultCov"></div>
+          <button class="primary-btn" id="readingAgainBtn">Next round (6 sentences)</button>
         </div>
       </div>
     </div>
@@ -1204,8 +1274,8 @@ const SUBJECTS = {
         hideIdentify: true,     // covered by the builder's identify step
         hideEndings: true,      // covered by the builder's typed Latin
         tabLabels: {flash: "Tables", quiz: "Tables quiz"},
-        label: "Week 3: English → Latin",
-        sublabel: "Build sentences, bonus, translate + endings tables",
+        label: "Week 3: Sentences & Tables",
+        sublabel: "English → Latin, Latin → English, bonus + endings tables",
         type: "grammar",
         // The four cases on the test sheet (nom, acc, gen, dat) — not
         // vocative or ablative, which are on page 7 but not being tested.
@@ -2163,6 +2233,1471 @@ function sbMakeRound(bonus, n){
   return shuffle(best); // mixed order, so the "big" sentences aren't all at the start
 }
 
+// ================= LATIN -> ENGLISH (typed translation) =================
+// He reads a generated Latin sentence and types it in English.
+//  - Only this week's words, and only the cases and tenses he's been taught.
+//  - Every sentence is checked to have exactly ONE sensible reading, so
+//    there are no "-ae could be genitive or dative" traps.
+//  - Rounds are built so that, round by round, every word on his lists gets
+//    tested; words he gets wrong come back in the next round.
+// Marking is word by word: English wording is flexible ("the king's son" /
+// "the son of the king", "didn't" / "did not", small typos), but who does
+// what to whom, tense, singular/plural and each word's meaning must be right.
+
+function rdEN(base, s3, ing, past, pp){ return {base, s3, ing, past, pp}; }
+const RD_VERB_EN = {
+  amo:        [rdEN("love","loves","loving","loved","loved")],
+  canto:      [rdEN("sing","sings","singing","sang","sung")],
+  capio:      [rdEN("take","takes","taking","took","taken"), rdEN("capture","captures","capturing","captured","captured"), rdEN("seize","seizes","seizing","seized","seized")],
+  consumo:    [rdEN("eat","eats","eating","ate","eaten"), rdEN("consume","consumes","consuming","consumed","consumed")],
+  credo:      [rdEN("believe","believes","believing","believed","believed"), rdEN("trust","trusts","trusting","trusted","trusted")],
+  dico:       [rdEN("say","says","saying","said","said")],
+  do:         [rdEN("give","gives","giving","gave","given")],
+  dormio:     [rdEN("sleep","sleeps","sleeping","slept","slept")],
+  duco:       [rdEN("lead","leads","leading","led","led")],
+  exeo:       [rdEN("go out","goes out","going out","went out","gone out"), rdEN("come out","comes out","coming out","came out","come out"), rdEN("leave","leaves","leaving","left","left")],
+  intellego:  [rdEN("understand","understands","understanding","understood","understood"), rdEN("realise","realises","realising","realised","realised"), rdEN("realize","realizes","realizing","realized","realized")],
+  interficio: [rdEN("kill","kills","killing","killed","killed")],
+  invenio:    [rdEN("find","finds","finding","found","found")],
+  laboro:     [rdEN("work","works","working","worked","worked")],
+  mitto:      [rdEN("send","sends","sending","sent","sent")],
+  porto:      [rdEN("carry","carries","carrying","carried","carried")],
+  respondeo:  [rdEN("reply","replies","replying","replied","replied"), rdEN("answer","answers","answering","answered","answered")],
+  rogo:       [rdEN("ask","asks","asking","asked","asked")],
+  sedeo:      [rdEN("sit","sits","sitting","sat","sat")],
+  sentio:     [rdEN("notice","notices","noticing","noticed","noticed"), rdEN("feel","feels","feeling","felt","felt"), rdEN("sense","senses","sensing","sensed","sensed")],
+  specto:     [rdEN("watch","watches","watching","watched","watched"), rdEN("look at","looks at","looking at","looked at","looked at")],
+  sto:        [rdEN("stand","stands","standing","stood","stood")],
+  surgo:      [rdEN("get up","gets up","getting up","got up","got up"), rdEN("rise","rises","rising","rose","risen"), rdEN("stand up","stands up","standing up","stood up","stood up")],
+  timeo:      [rdEN("fear","fears","fearing","feared","feared"), {beAdj:"afraid", objPrep:"of"}],
+  traho:      [rdEN("drag","drags","dragging","dragged","dragged"), rdEN("pull","pulls","pulling","pulled","pulled")],
+  venio:      [rdEN("come","comes","coming","came","come"), rdEN("arrive","arrives","arriving","arrived","arrived")],
+  video:      [rdEN("see","sees","seeing","saw","seen")],
+  voco:       [rdEN("call","calls","calling","called","called")],
+};
+// What each verb can sensibly take. acc: "people" / "any" / a list;
+// things: which things it can take; give: thing + dative person;
+// dat: dative person (credo, respondeo); nihil: "nothing" as its object.
+const RD_FRAMES = {
+  amo:        {acc:"people"},
+  canto:      {intr:true, place:"in"},
+  capio:      {acc:["fur"], things:["pecunia","donum","liber"], notSubjects:["fur"]},
+  consumo:    {intr:true, nihil:true},
+  credo:      {dat:true, intr:true},
+  dico:       {nihil:true},
+  do:         {give:true},
+  dormio:     {intr:true, place:"in"},
+  duco:       {acc:"people"},
+  exeo:       {intr:true, place:"e"},
+  intellego:  {intr:true, nihil:true},
+  interficio: {acc:["fur"], subjects:["rex","servus","vir","dominus"]},
+  invenio:    {acc:"people", things:["pecunia","donum","liber"], place:"in"},
+  laboro:     {intr:true, place:"in"},
+  mitto:      {acc:["servus","filius","filia"], things:["donum","liber","pecunia"], give:true},
+  porto:      {things:["donum","liber","pecunia"], give:true},
+  respondeo:  {dat:true, intr:true},
+  rogo:       {acc:"people"},
+  sedeo:      {intr:true, place:"in"},
+  sentio:     {acc:"people", nihil:true},
+  specto:     {acc:"people", things:["villa","donum","liber"]},
+  sto:        {intr:true, place:"in"},
+  sum:        {be:true},
+  surgo:      {intr:true},
+  timeo:      {acc:"people", intr:true},
+  traho:      {acc:"people"},
+  venio:      {intr:true, place:"e"},
+  video:      {acc:"people", things:["villa","donum","liber","pecunia"]},
+  voco:       {acc:"people"},
+};
+// English for each noun: [singular words, plural words] (first = shown in answers)
+const RD_NOUN_EN = {
+  dominus: [["master","owner"],["masters","owners"]],
+  filia:   [["daughter"],["daughters"]],
+  filius:  [["son"],["sons"]],
+  fur:     [["thief"],["thieves"]],
+  maritus: [["husband"],["husbands"]],
+  regina:  [["queen"],["queens"]],
+  rex:     [["king"],["kings"]],
+  servus:  [["slave","servant"],["slaves","servants"]],
+  uxor:    [["wife"],["wives"]],
+  vir:     [["man"],["men"]],
+  donum:   [["gift","present"],["gifts","presents"]],
+  liber:   [["book"],["books"]],
+  pecunia: [["money","cash"],["money"]],
+  villa:   [["house","villa","home"],["houses","villas"]],
+  puella:  [["girl"],["girls"]],
+};
+const RD_EXTRA_NOUNS = { puella: {entry:"puella", mean:"girl", decl:1, g:"f", person:true} };
+function rdNoun(l){ return SB_NOUNS[l] || RD_EXTRA_NOUNS[l]; }
+
+const RD_ADJ_EN = {
+  fortis:   {positive:["brave"], comparative:["braver","more brave"], superlative:["very brave","bravest","most brave"]},
+  callidus: {positive:["clever","cunning"], comparative:["cleverer","more clever","more cunning"], superlative:["very clever","cleverest","most clever","very cunning","most cunning"]},
+  iratus:   {positive:["angry","cross"], comparative:["angrier","more angry"], superlative:["very angry","angriest","most angry"]},
+  fessus:   {positive:["tired","weary"]},
+  novus:    {positive:["new"]},
+};
+const RD_DEG_KEY = {
+  fortis:   {comparative:"fortior", superlative:"fortissimus"},
+  callidus: {comparative:"callidior", superlative:"callidissimus"},
+  iratus:   {comparative:"iratior", superlative:"iratissimus"},
+};
+function rdAdjKey(adj, degree){ return degree === "positive" ? adj : RD_DEG_KEY[adj][degree]; }
+
+// quantifiers: omnes (all), nullus (no), unus (one), ceteri (the other / the rest of)
+const RD_QUANT_EN = {
+  omnis:  {en:["all","all of"], canon:"all the"},
+  nullus: {en:["no","not one","not any","not single","not even one"], canon:"no"},
+  unus:   {en:["one","single","only one"], canon:"one"},
+  ceteri: {en:["other","rest of"], canon:"the other", subst:["others","rest","other ones"]},
+};
+function rdQuantForm(q, g, kase, num){
+  const ci = SB_CASES.indexOf(kase);
+  if(q === "omnis"){
+    if(g === "n") return [["omne","omne","omnis","omni"],["omnia","omnia","omnium","omnibus"]][num][ci];
+    return [["omnis","omnem","omnis","omni"],["omnes","omnes","omnium","omnibus"]][num][ci];
+  }
+  if(q === "nullus" || q === "unus"){
+    const st = q === "nullus" ? "null" : "un";
+    if(num === 0 && kase === "gen") return st + "ius";
+    if(num === 0 && kase === "dat") return st + "i";
+    return st + SB_GENDER_ENDINGS[g][num][ci];
+  }
+  if(num === 0) return null; // ceteri: plural only
+  return "ceter" + SB_GENDER_ENDINGS[g][1][ci];
+}
+
+const RD_ADVS = {
+  subito:   {en:["suddenly","all of a sudden"], tenses:["perfect","imperfect"], front:true},
+  olim:     {en:["once","some time ago","long ago","once upon a time","one day","a long time ago"], tenses:["perfect","imperfect"], front:true},
+  tandem:   {en:["at last","finally","eventually","in the end","at long last"], tenses:["perfect"], front:true},
+  statim:   {en:["immediately","at once","straight away","straightaway","instantly","right away"], tenses:["perfect"], front:true},
+  mox:      {en:["soon"], front:true},
+  iterum:   {en:["again","once more","once again"], front:false},
+  fortiter: {en:["bravely"], front:false, verbs:["laboro","sto","porto","traho","capio","interficio","respondeo","venio","exeo","duco","mitto","surgo"]},
+  tamen:    {en:["however","nevertheless","yet","even so"], front:true},
+  valde:    {en:["very much","greatly","really","a lot","so much"], front:false, verbs:["amo"]},
+};
+// verbs that make a sensible reason after quod ("because he saw the thief")
+const RD_CAUSE_VERBS = ["timeo","amo","video","invenio","sentio","intellego","credo","venio","exeo","laboro","dormio"];
+// adverbs that read naturally in the middle of a longer sentence
+const RD_MID_ADVS = ["statim","subito","tandem","mox","iterum","fortiter","valde"];
+const RD_WORD_EN = { // the little words, as they're marked
+  et:["and"], sed:["but"], quod:["because","since","as"], postquam:["after"],
+  ubiWhen:["when","as soon as"], ubiWhere:["where"], "quis?":["who"], quam:["than"],
+  nihil:["nothing"], e:["out of","from","of"], "in":["in","inside","at"],
+};
+
+const RD_BE_P = ["am","are","is","are","are","are"], RD_BE_I = ["was","were","was","were","were","were"];
+const RD_PRON = [["I"],["you"],["he","she","it","he/she","he or she","she/he","she or he"],["we"],["you","you all","you pl","you plural","you guys","you lot"],["they"]];
+const RD_PRON_CANON = ["I","you","he/she","we","you (pl)","they"];
+const RD_PERSON_DESC = ["1st person singular (I)","2nd person singular (you)","3rd person singular (he/she/it)","1st person plural (we)","2nd person plural (you, more than one)","3rd person plural (they)"];
+const RD_NO_IMPF = new Set(["amo","video","timeo","invenio","credo"]);
+const RD_EXEO_PERF = ["exii","exiisti","exiit","exiimus","exiistis","exierunt"];
+
+// Tenses he can read for each verb: the present & imperfect only for verbs
+// like porto (1st conjugation) and sum; every other verb in the perfect
+// (its perfect stem is on his sheet and the perfect endings are the same).
+function rdTenses(lemma){
+  if(lemma === "exeo") return ["perfect"];
+  const def = VERB_DEFS.find(d => d.lemma === lemma);
+  let t = def.irregular ? ["present","imperfect"] : def.conj === 1 ? ["present","imperfect","perfect"] : ["perfect"];
+  if(RD_NO_IMPF.has(lemma)) t = t.filter(x => x !== "imperfect");
+  return t;
+}
+// Latin verb form, or null where the same spelling is used for another
+// tense of that verb (e.g. venit = comes AND came) — those are skipped.
+function rdVerbForm(lemma, tense, p){
+  if(lemma === "exeo") return RD_EXEO_PERF[p];
+  const cell = VERB_CELLS.find(c => c.lemma === lemma && c.tense === tense && c.person === p);
+  return cell ? cell.latin : null;
+}
+const RD_ENDINGS = {
+  1:   [["a","am","ae","ae","a"],["ae","as","arum","is","is"]],
+  2:   [["us","um","i","o","o"],["i","os","orum","is","is"]],
+  "2n":[["um","um","i","o","o"],["a","a","orum","is","is"]],
+  3:   [["","em","is","i","e"],["es","es","um","ibus","ibus"]],
+};
+const RD_CASES = ["nom","acc","gen","dat","abl"];
+const RD_CASE_NAMES = {nom:"nominative", acc:"accusative", gen:"genitive", dat:"dative", abl:"ablative"};
+function rdNounForm(lemma, kase, num){
+  const n = rdNoun(lemma);
+  const ci = RD_CASES.indexOf(kase);
+  if(num === 0 && ci === 0 && n.nomSg) return n.nomSg;
+  const stem = n.stem || lemma.replace(/(us|um|a)$/, "");
+  return stem + RD_ENDINGS[n.neuter ? "2n" : n.decl][num][ci];
+}
+
+// ---------- English answer text -> tokens ----------
+// Lower case, contractions expanded ("didn't" -> "did not"), possessives
+// split off ("king's" -> king + 's), and little words that don't matter
+// for the Latin (the / a / an / his…) dropped.
+const RD_FILLERS = new Set(["the","a","an","some","his","her","their","its","my","your","our","then"]);
+function rdTokens(s){
+  s = (" " + String(s).toLowerCase() + " ")
+    .replace(/[’‘`´]/g, "'")
+    .replace(/[‐-―-]/g, " ");
+  s = s.replace(/\bcan't\b/g, "can not").replace(/\bwon't\b/g, "will not").replace(/n't\b/g, " not")
+       .replace(/\b(he|she|it|who|where|that|there|what)'s\b/g, "$1 is")
+       .replace(/'re\b/g, " are").replace(/\bi'm\b/g, "i am").replace(/'ve\b/g, " have").replace(/'ll\b/g, " will").replace(/'d\b/g, " had");
+  s = s.replace(/[^a-z' ]+/g, " ");
+  const out = [];
+  s.split(/\s+/).forEach(w=>{
+    w = w.replace(/^'+/, "");
+    if(!w) return;
+    let m;
+    if((m = w.match(/^(.+)'s$/))){ out.push(m[1].replace(/'/g, ""), "'s"); return; }
+    if((m = w.match(/^(.+s)'$/))){ out.push(m[1].replace(/'/g, ""), "'"); return; }
+    w = w.replace(/'/g, "");
+    if(w) out.push(w);
+  });
+  return out.filter(t => !RD_FILLERS.has(t));
+}
+
+// Every English word the checker knows, by kind — used to fix typos and
+// to tell "a different word" (a real mistake) from "a word I didn't expect".
+const RD_LEX = new Map();
+(function buildLexicon(){
+  const add = (str, cat) => rdTokens(str).forEach((t, i) => {
+    if(t === "'s" || t === "'") return;
+    if(!RD_LEX.has(t)) RD_LEX.set(t, new Set());
+    RD_LEX.get(t).add(i === 0 ? cat : "func");
+  });
+  Object.values(RD_NOUN_EN).forEach(([sg, pl]) => sg.concat(pl).forEach(w => add(w, "noun")));
+  Object.values(RD_VERB_EN).forEach(ms => ms.forEach(m => {
+    if(m.beAdj){ add(m.beAdj, "verb"); return; }
+    [m.base, m.s3, m.ing, m.past, m.pp].forEach(w => add(w, "verb"));
+  }));
+  Object.values(RD_ADJ_EN).forEach(d => Object.values(d).forEach(list => list.forEach(w => add(w, "adj"))));
+  Object.values(RD_QUANT_EN).forEach(q => q.en.concat(q.subst || []).forEach(w => add(w, "adj")));
+  Object.values(RD_ADVS).forEach(a => a.en.forEach(w => add(w, "adv")));
+  Object.values(RD_WORD_EN).forEach(list => list.forEach(w => add(w, "func")));
+  ("to of for than not did does do was were is are am has have had used been when after because " +
+   "and but however in out from all no one other rest others nothing very much pl plural guys lot at since as single any once more " +
+   "use up").split(" ").forEach(w => add(w, "func"));
+  "i you he she it we they who where".split(" ").forEach(w => add(w, "pron"));
+})();
+
+function rdEditDistance(a, b, max){
+  if(Math.abs(a.length - b.length) > max) return max + 1;
+  const prev2 = [], prev = [], cur = [];
+  for(let j = 0; j <= b.length; j++) prev[j] = j;
+  for(let i = 1; i <= a.length; i++){
+    cur[0] = i;
+    let rowMin = cur[0];
+    for(let j = 1; j <= b.length; j++){
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      let v = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + cost);
+      if(i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) v = Math.min(v, prev2[j-2] + 1); // swapped letters
+      cur[j] = v;
+      if(v < rowMin) rowMin = v;
+    }
+    if(rowMin > max) return max + 1;
+    for(let j = 0; j <= b.length; j++){ prev2[j] = prev[j]; prev[j] = cur[j]; }
+  }
+  return prev[b.length];
+}
+// Fix small typos: a word he typed that isn't a known word is replaced by
+// the one known word it's closest to (1 letter off; 2 for longer words).
+// A real word ("sees" when it should be "saw") is never "fixed".
+function rdCorrect(tokens, expected){
+  return tokens.map(t=>{
+    if(t.length < 4 || t === "'s" || t === "'" || RD_LEX.has(t) || expected.has(t)) return t;
+    const max = t.length >= 6 ? 2 : 1;
+    let best = null, bestScore = Infinity, tie = false;
+    const consider = (w, isExp) => {
+      if(w.length < 3) return;
+      const d = rdEditDistance(t, w, max);
+      if(d > max) return;
+      // a letter left out is the commonest slip, then a wrong letter, then an extra one
+      const score = d * 10 + (w.length > t.length ? 0 : w.length === t.length ? 1 : 2) - (isExp ? 0.5 : 0);
+      if(score < bestScore){ best = w; bestScore = score; tie = false; }
+      else if(score === bestScore && w !== best) tie = true;
+    };
+    expected.forEach(w => consider(w, true));
+    RD_LEX.forEach((_, w) => { if(!expected.has(w)) consider(w, false); });
+    return best && !tie ? best : t;
+  });
+}
+
+// ---------- English verb phrases ----------
+// All the ways a verb can be written in a tense. Agreement is NOT checked
+// (the noun or pronoun already shows singular/plural), so "the slaves
+// carries" isn't marked down — tense, meaning and "not" are.
+function rdVerbAlts(lemma, tense, neg, opts){
+  opts = opts || {};
+  const out = [];
+  const add = s => out.push(s);
+  if(lemma === "sum"){
+    (tense === "present" ? ["am","is","are"] : ["was","were"]).forEach(b => add(neg ? b + " not" : b));
+    return out;
+  }
+  RD_VERB_EN[lemma].forEach(m=>{
+    if(m.beAdj){
+      const adj = m.beAdj + (opts.obj ? " " + m.objPrep : "");
+      (tense === "present" ? ["am","is","are"] : ["was","were"]).forEach(b => add(b + (neg ? " not " : " ") + adj));
+      if(tense === "perfect"){
+        ["has","have"].forEach(h => add(h + (neg ? " not" : "") + " been " + adj));
+        if(opts.plup) add("had" + (neg ? " not" : "") + " been " + adj);
+      }
+      return;
+    }
+    if(tense === "present"){
+      if(!neg){ add(m.s3); add(m.base); ["is","are","am"].forEach(b => add(b + " " + m.ing)); add("does " + m.base); add("do " + m.base); }
+      else { add("does not " + m.base); add("do not " + m.base); ["is","are","am"].forEach(b => add(b + " not " + m.ing)); }
+    } else if(tense === "imperfect"){
+      if(!neg){ ["was","were"].forEach(b => add(b + " " + m.ing)); add("used to " + m.base); add("kept " + m.ing); }
+      else { ["was","were"].forEach(b => add(b + " not " + m.ing)); add("did not use to " + m.base); add("used not to " + m.base); }
+    } else {
+      if(!neg){ add(m.past); add("has " + m.pp); add("have " + m.pp); add("did " + m.base); if(opts.plup) add("had " + m.pp); }
+      else { add("did not " + m.base); add("has not " + m.pp); add("have not " + m.pp); if(opts.plup) add("had not " + m.pp); }
+    }
+  });
+  return out;
+}
+// The one shown in the model answer ("carries", "was carrying", "carried")
+function rdVerbCanon(lemma, tense, neg, p, opts){
+  opts = opts || {};
+  const be = tense === "present" ? RD_BE_P[p] : RD_BE_I[p];
+  if(lemma === "sum") return be + (neg ? " not" : "");
+  if(lemma === "timeo" && !opts.obj) return be + (neg ? " not" : "") + " afraid"; // "timuit" on its own = "was afraid"
+  const m = RD_VERB_EN[lemma][0];
+  if(tense === "present") return neg ? (p === 2 ? "does" : "do") + " not " + m.base : (p === 2 ? m.s3 : m.base);
+  if(tense === "imperfect") return be + (neg ? " not " : " ") + m.ing;
+  return neg ? "did not " + m.base : m.past;
+}
+function rdTenseHint(lemma, tense){
+  if(lemma === "sum") return tense === "present" ? "present: “is / are”" : "imperfect: “was / were”";
+  const m = RD_VERB_EN[lemma][0];
+  if(tense === "present") return "present: “" + m.s3 + "” or “is " + m.ing + "”";
+  if(tense === "imperfect") return "imperfect: “was " + m.ing + "”";
+  return "perfect: “" + m.past + "” or “has " + m.pp + "”";
+}
+
+// ---------- reading every Latin word every possible way ----------
+// Used to make sure each sentence has only one sensible meaning.
+function rdBuildReadings(cfg){
+  const nouns = {}, adjs = {};
+  const add = (map, form, r) => { if(form) (map[form] = map[form] || []).push(r); };
+  cfg.allNouns.forEach(l=>{
+    const nums = cfg.sgOnlyRead && cfg.sgOnlyRead[l] ? [0] : [0,1];
+    RD_CASES.forEach(k=>{
+      if(k !== "abl" && !cfg.cases.includes(k)) return;
+      nums.forEach(num => add(nouns, rdNounForm(l, k, num), {lemma:l, kase:k, num}));
+    });
+  });
+  const adjCases = cfg.cases.filter(k => k !== "abl");
+  (cfg.adjs || []).forEach(a=>{
+    const degs = ["positive"].concat(RD_DEG_KEY[a] ? ["comparative","superlative"] : []);
+    degs.forEach(degree => ["m","f","n"].forEach(g => adjCases.forEach(kase => [0,1].forEach(num=>{
+      add(adjs, sbAdjForm(a, degree, g, kase, num), {lemma:a, degree, kase, num, g});
+    }))));
+  });
+  (cfg.quants || []).forEach(q => ["m","f","n"].forEach(g => adjCases.forEach(kase => [0,1].forEach(num=>{
+    add(adjs, rdQuantForm(q, g, kase, num), {lemma:q, degree:"quant", kase, num, g});
+  }))));
+  return {nouns, adjs};
+}
+function rdFrame(cfg, lemma){ return (cfg.frameOverrides && cfg.frameOverrides[lemma]) || RD_FRAMES[lemma]; }
+function rdReaderFrames(lemma, cfg){
+  const f = cfg ? rdFrame(cfg, lemma) : RD_FRAMES[lemma], out = [];
+  if(f.be) return [{be:true}];
+  if(f.intr) out.push({acc:0, dat:0});
+  if(f.acc || f.things || f.nihil) out.push({acc:1, dat:0});
+  if(f.give) out.push({acc:1, dat:1});
+  if(f.dat) out.push({acc:0, dat:1});
+  return out;
+}
+function rdSigOf(toks, ch){
+  return toks.map((tk, i) => {
+    const c = ch[i];
+    if(tk.t === "noun") return c.r.lemma + ":" + c.r.kase + ":" + c.r.num;
+    if(tk.t === "adj") return c.r.lemma + ":" + c.r.degree + ":" + c.r.kase + ":" + c.r.num + ":" + c.att;
+    return "-";
+  }).join("|");
+}
+function rdIntendedSig(toks){
+  return toks.map(tk => {
+    const r = tk.r;
+    if(tk.t === "noun") return r.lemma + ":" + r.kase + ":" + r.num;
+    if(tk.t === "adj") return r.lemma + ":" + r.degree + ":" + r.kase + ":" + r.num + ":" + tk.att;
+    return "-";
+  }).join("|");
+}
+// Is a full reading of the clause grammatical with what he's been taught?
+function rdValidParse(toks, ch, ctxv){
+  const {frames, vnum, vper, hasQuis, hasPlace} = ctxv;
+  const be = frames.some(f => f.be);
+  const n = toks.length;
+  const isNoun = i => i >= 0 && i < n && (toks[i].t === "noun" || (toks[i].t === "adj" && ch[i].att === "subst"));
+  const caseOf = i => ch[i].r.kase, numOf = i => ch[i].r.num;
+  const genderOf = i => toks[i].t === "noun" ? rdNoun(ch[i].r.lemma).g : ch[i].r.g;
+  const adjOn = {}, quantOn = {};
+  let pred = null;
+  for(let i = 0; i < n; i++){
+    if(toks[i].t !== "adj") continue;
+    const c = ch[i], r = c.r;
+    if(c.att === "subst") continue;
+    if(c.att === "pred"){
+      if(!be || pred !== null || r.degree === "quant") return false;
+      if(r.num !== vnum) return false;
+      pred = i; continue;
+    }
+    if(!isNoun(c.att) || toks[c.att].t !== "noun") return false;
+    if(caseOf(c.att) !== r.kase || numOf(c.att) !== r.num || genderOf(c.att) !== r.g) return false;
+    const bucket = r.degree === "quant" ? quantOn : adjOn;
+    if(bucket[c.att]) return false;
+    bucket[c.att] = true;
+  }
+  if(ctxv.hasQuam){
+    const qi = toks.findIndex(t => t.t === "quam");
+    if(pred === null || pred !== qi - 1 || ch[pred].r.degree !== "comparative") return false;
+    if(!isNoun(qi + 1) || caseOf(qi + 1) !== "nom") return false;
+  } else if(pred !== null && ch[pred].r.degree === "comparative") return false;
+  let subjects = [], acc = 0, dat = 0;
+  const skip = new Set();
+  toks.forEach((t, i) => {
+    if(t.t !== "et") return;
+    skip.add(i - 1); skip.add(i + 1);
+  });
+  for(let i = 0; i < n; i++){
+    if(toks[i].t === "et"){
+      if(!isNoun(i-1) || !isNoun(i+1) || caseOf(i-1) !== caseOf(i+1)) return false;
+      const k = caseOf(i-1);
+      if(k === "nom") subjects.push({num:1, i:i-1});
+      else if(k === "acc") acc++;
+      else if(k === "dat") dat++;
+      else return false;
+      continue;
+    }
+    if(toks[i].t === "nihil"){ acc++; continue; }
+    if(!isNoun(i) || skip.has(i)) continue;
+    const k = caseOf(i);
+    if(k === "gen"){
+      if(!isNoun(i-1) || toks[i-1].t !== "noun" || caseOf(i-1) === "gen" || caseOf(i-1) === "abl") return false;
+      continue;
+    }
+    if(k === "abl"){ if(!(i > 0 && toks[i-1].t === "prep")) return false; continue; }
+    if(i > 0 && toks[i-1].t === "quam") continue;
+    if(k === "nom") subjects.push({num: numOf(i), i});
+    else if(k === "acc") acc++;
+    else if(k === "dat") dat++;
+  }
+  if(vper !== 2 || hasQuis){ if(subjects.length) return false; }
+  else {
+    if(subjects.length > 1) return false;
+    if(subjects.length === 1 && subjects[0].num !== vnum) return false;
+  }
+  if(pred !== null && subjects.length === 1 && toks[subjects[0].i].t === "noun" && !toks.some(t => t.t === "et")){
+    if(genderOf(subjects[0].i) !== ch[pred].r.g) return false;
+  }
+  if(be){
+    if(acc || dat) return false;
+    if(pred === null && !hasPlace && !ctxv.isUbi) return false;
+    return true;
+  }
+  if(pred !== null) return false;
+  return frames.some(f => f.acc === acc && dat <= f.dat);
+}
+// Exactly one reading, and it's the one intended?
+function rdUnique(cfg, toks){
+  const R = cfg.readings;
+  const verb = toks.find(t => t.t === "verb");
+  const ctxv = {
+    frames: rdReaderFrames(verb.lemma, cfg), vnum: verb.p >= 3 ? 1 : 0, vper: verb.p % 3,
+    hasQuis: toks.some(t => t.t === "quis"), hasQuam: toks.some(t => t.t === "quam"),
+    hasPlace: toks.some(t => t.t === "prep"), isUbi: toks.some(t => t.t === "ubiq"),
+  };
+  const be = ctxv.frames.some(f => f.be);
+  const opts = toks.map((tk, i)=>{
+    if(tk.t === "noun"){
+      const afterPrep = i > 0 && toks[i-1].t === "prep";
+      return (R.nouns[tk.w] || []).filter(r => afterPrep ? r.kase === "abl" : r.kase !== "abl").map(r => ({r}));
+    }
+    if(tk.t === "adj"){
+      const out = [];
+      (R.adjs[tk.w] || []).forEach(r=>{
+        if(i > 0 && toks[i-1].t === "noun") out.push({r, att:i-1});
+        if(i + 1 < toks.length && toks[i+1].t === "noun") out.push({r, att:i+1});
+        if(be && r.kase === "nom" && r.degree !== "quant") out.push({r, att:"pred"});
+        if(r.lemma === "ceteri") out.push({r, att:"subst"});
+      });
+      return out;
+    }
+    return [{}];
+  });
+  if(opts.some(o => !o.length)) return false;
+  const sigs = new Set();
+  const ch = new Array(toks.length);
+  let nodes = 0;
+  (function rec(i){
+    if(sigs.size > 1 || ++nodes > 20000) return;
+    if(i === toks.length){ if(rdValidParse(toks, ch, ctxv)) sigs.add(rdSigOf(toks, ch)); return; }
+    for(const o of opts[i]){ ch[i] = o; rec(i + 1); if(sigs.size > 1) return; }
+  })(0);
+  return sigs.size === 1 && sigs.has(rdIntendedSig(toks));
+}
+
+// ---------- building a sentence ----------
+function rdChance(p){ return Math.random() < p; }
+function rdPick(list, want, keyOf){
+  if(!list || !list.length) return undefined;
+  keyOf = keyOf || (x => x);
+  const w = list.filter(x => want.has(keyOf(x)));
+  if(w.length && Math.random() < 0.85) return sbRand(w);
+  return sbRand(list);
+}
+function rdNewNP(cfg, lemma, kase, num){
+  const n = rdNoun(lemma);
+  if(num == null) num = (n.sgOnly || (cfg.sgOnly && cfg.sgOnly[lemma])) ? 0 : (rdChance(0.4) ? 1 : 0);
+  return {lemma, kase, num};
+}
+function rdObjPool(cfg, fr){
+  let people = [];
+  if(fr.acc === "people") people = cfg.people.slice();
+  else if(Array.isArray(fr.acc)) people = fr.acc.filter(l => cfg.people.includes(l));
+  const things = (fr.things || []).filter(l => cfg.things.includes(l));
+  return people.concat(things);
+}
+function rdAdjOptions(cfg, np){
+  if(np.subst) return [];
+  const n = rdNoun(np.lemma), out = [];
+  (cfg.adjs || []).forEach(a=>{
+    const A = SB_ADJS[a];
+    const fits = n.person ? !!A.people : !!(A.things && A.things.includes(np.lemma));
+    if(!fits) return;
+    // positive fortis only as plain "fortis" (rex-type endings aren't on the sheet)
+    if(!(A.type === "3" && !(np.kase === "nom" && np.num === 0))) out.push({adj:a, degree:"positive", key:a});
+    if(RD_DEG_KEY[a]) out.push({adj:a, degree:"superlative", key:rdAdjKey(a, "superlative")});
+  });
+  return out;
+}
+function rdDecorate(cfg, ctx, C, want, o){
+  const F = cfg.features;
+  const nps = [C.subj, C.obj, C.dat].filter(np => np && !np.subst);
+  // in two-part sentences keep the extras down: one adjective OR genitive in total
+  const extrasOk = () => !o.inPair || ctx.decor < 1;
+  // genitive ("the king's son", "the son of the kings") — one per sentence at most
+  if(F.gen && !ctx.genDone && !o.noGen && extrasOk()){
+    const wantP = cfg.people.some(l => want.has(l) && !ctx.used.has(l));
+    if(rdChance(wantP ? 0.55 : 0.3)){
+      for(const np of shuffle(nps)){
+        const list = (SB_POSSESSORS[np.lemma] || []).filter(l => cfg.people.includes(l) && !ctx.used.has(l));
+        if(!list.length) continue;
+        const pl = rdPick(list, want);
+        np.poss = {lemma: pl, num: rdChance(0.3) ? 1 : 0};
+        if(np.lemma === "uxor" || np.lemma === "maritus") np.num = 0;
+        ctx.used.add(pl); ctx.genDone = true; ctx.decor++;
+        break;
+      }
+    }
+  }
+  // quantifier: all / no / one / the other
+  if(F.quant && !o.noQuant && !o.inPair){
+    const qs = ["omnis","nullus","unus","ceteri"];
+    if(rdChance(qs.some(q => want.has(q)) ? 0.7 : 0.15)){
+      for(const np of shuffle(nps)){
+        if(np.poss || !["nom","acc"].includes(np.kase)) continue;
+        const n = rdNoun(np.lemma);
+        const ok = qs.filter(q => {
+          if(q === "nullus" && (C.neg || np.kase === "nom" && C.q)) return false;
+          if(q === "omnis" || q === "ceteri") return !n.sgOnly && !(cfg.sgOnly && cfg.sgOnly[np.lemma]) && n.g !== "n" && n.person;
+          return true;
+        });
+        if(!ok.length) continue;
+        const q = rdPick(ok, want);
+        np.quant = q;
+        np.num = (q === "omnis" || q === "ceteri") ? 1 : 0;
+        break;
+      }
+    }
+  }
+  // adjective: "the tired slave", "the very brave queens", "the new book"
+  if(F.adj && !o.noAdj && extrasOk()){
+    const keys = ["callidus","iratus","fessus","fortis","novus","fortissimus","callidissimus","iratissimus"];
+    if(rdChance(keys.some(k => want.has(k)) ? 0.75 : 0.3)){
+      for(const np of shuffle(nps)){
+        if(np.poss) continue;
+        const opts = rdAdjOptions(cfg, np).filter(x => !ctx.usedAdj.has(x.adj));
+        if(!opts.length) continue;
+        const pick = rdPick(opts, want, x => x.key);
+        np.adj = {adj: pick.adj, degree: pick.degree};
+        ctx.usedAdj.add(pick.adj); ctx.decor++;
+        break;
+      }
+    }
+  }
+  // "not"
+  if(F.neg && !o.noNeg && !C.q && !(nps.some(np => np.quant === "nullus"))){
+    if(rdChance(want.has("non") ? 0.5 : 0.12)) C.neg = true;
+  }
+  // an adverb
+  if(F.adv && !o.noAdv && !C.q){
+    const fits = Object.keys(RD_ADVS).filter(a => {
+      const A = RD_ADVS[a];
+      if(A.tenses && !A.tenses.includes(C.tense)) return false;
+      if(A.verbs && !A.verbs.includes(C.verb)) return false;
+      if(a === "tamen" && o.inPair) return false;
+      if(o.advSet && !o.advSet.includes(a)) return false;
+      if(ctx.usedAdv.has(a)) return false;
+      if((a === "olim" || a === "iterum") && (ctx.usedAdv.has("olim") || ctx.usedAdv.has("iterum"))) return false;
+      return true;
+    });
+    if(fits.length && rdChance(fits.some(a => want.has(a)) ? 0.75 : 0.3)){
+      C.adv = rdPick(fits, want);
+      ctx.usedAdv.add(C.adv);
+    }
+  }
+}
+// One clause: verb + subject + whatever the verb takes (+ extras)
+function rdClause(cfg, ctx, want, o){
+  o = o || {};
+  const C = {neg:false, adv:null};
+  let verbs = (o.verbs || cfg.verbs.filter(v => v !== "sum")).filter(v => !ctx.usedVerbs.has(v));
+  C.verb = o.verb || rdPick(verbs, want);
+  if(!C.verb) return null;
+  ctx.usedVerbs.add(C.verb);
+  let tenses = rdTenses(C.verb);
+  if(o.tenses) tenses = tenses.filter(t => o.tenses.includes(t));
+  if(!tenses.length) return null;
+  C.tense = sbRand(tenses);
+  const fr = rdFrame(cfg, C.verb);
+  // --- subject ---
+  if(o.q === "quis"){ C.q = "quis"; C.p = 2; }
+  else if(o.p != null){ C.p = o.p; C.pronoun = true; C.ref = o.ref || null; }
+  else if(cfg.features.pron && !fr.subjects && rdChance(o.pronChance != null ? o.pronChance : 0.22)){
+    C.p = sbRand(cfg.pronPersons || [0,1,2,3,4,5]); C.pronoun = true;
+  } else {
+    const pool = (fr.subjects || cfg.people).filter(l => cfg.people.includes(l) && !(fr.notSubjects || []).includes(l) && !ctx.used.has(l));
+    if(!pool.length) return null;
+    if(cfg.features.compound && !o.noCompound && pool.length >= 2 && rdChance(want.has("et") ? 0.45 : 0.06)){
+      const a = rdPick(pool, want); ctx.used.add(a);
+      const b = rdPick(pool.filter(l => l !== a), want); ctx.used.add(b);
+      C.compound = [rdNewNP(cfg, a, "nom", 0), rdNewNP(cfg, b, "nom", 0)];
+      C.p = 5;
+    } else if(cfg.features.quant && !o.noQuant && want.has("ceteri") && rdChance(0.3)){
+      C.subj = {subst:"ceteri", kase:"nom", num:1};
+      C.p = 5;
+    } else {
+      const l = rdPick(pool, want); ctx.used.add(l);
+      C.subj = rdNewNP(cfg, l, "nom");
+      C.p = C.subj.num ? 5 : 2;
+    }
+  }
+  // --- what the verb takes ---
+  const choices = [];
+  if(fr.intr) choices.push("intr");
+  if(rdObjPool(cfg, fr).length) choices.push("acc");
+  if(fr.give) choices.push("give");
+  if(fr.dat) choices.push("dat");
+  if(fr.nihil && cfg.features.nihil) choices.push("nihil");
+  if(!choices.length) return null;
+  let ch = sbRand(choices);
+  if(choices.includes("nihil") && (want.has("nihil") || C.verb === "dico") && rdChance(0.8)) ch = "nihil";
+  if(o.frame && choices.includes(o.frame)) ch = o.frame;
+  C.frame = ch;
+  if(ch === "acc"){
+    const pool = rdObjPool(cfg, fr).filter(l => !ctx.used.has(l));
+    if(!pool.length) return null;
+    const l = rdPick(pool, want); ctx.used.add(l);
+    C.obj = rdNewNP(cfg, l, "acc");
+  } else if(ch === "give"){
+    const things = (fr.things || ["donum","liber","pecunia"]).filter(l => cfg.things.includes(l) && !ctx.used.has(l));
+    const people = cfg.people.filter(l => !ctx.used.has(l));
+    if(!things.length || !people.length) return null;
+    const t = rdPick(things, want); ctx.used.add(t);
+    C.obj = rdNewNP(cfg, t, "acc");
+    const d = rdPick(people, want); ctx.used.add(d);
+    C.dat = rdNewNP(cfg, d, "dat");
+  } else if(ch === "dat"){
+    const people = cfg.people.filter(l => !ctx.used.has(l));
+    if(!people.length) return null;
+    const d = rdPick(people, want); ctx.used.add(d);
+    C.dat = rdNewNP(cfg, d, "dat");
+  } else if(ch === "nihil"){
+    C.nihil = true;
+  }
+  // --- in the house / out of the house ---
+  if(cfg.features.place && fr.place && !o.noPlace && !ctx.used.has("villa") && cfg.things.includes("villa") &&
+     (ch === "intr" || (fr.place === "in" && ch === "acc"))){
+    if(rdChance([fr.place, "villa"].some(k => want.has(k)) ? 0.7 : 0.18)){
+      C.place = fr.place; ctx.used.add("villa");
+    }
+  }
+  rdDecorate(cfg, ctx, C, want, o);
+  return C;
+}
+// "X is/was tired", "X was very angry", "X was in the house", "X was braver than Y"
+function rdBeClause(cfg, ctx, want, o){
+  o = o || {};
+  if(!cfg.verbs.includes("sum") || ctx.usedVerbs.has("sum")) return null;
+  ctx.usedVerbs.add("sum");
+  const C = {verb:"sum", tense: sbRand(o.tenses ? rdTenses("sum").filter(t => o.tenses.includes(t)) : rdTenses("sum")), neg:false, adv:null, frame:"be"};
+  if(o.p != null){ C.p = o.p; C.pronoun = true; C.ref = o.ref || null; }
+  else if(cfg.features.pron && !o.compare && rdChance(0.15)){ C.p = sbRand([0,1,2,3,4,5]); C.pronoun = true; }
+  else {
+    const pool = cfg.people.filter(l => !ctx.used.has(l));
+    const l = rdPick(pool, want); if(!l) return null; ctx.used.add(l);
+    C.subj = rdNewNP(cfg, l, "nom", o.compare ? 0 : undefined);
+    C.p = C.subj.num ? 5 : 2;
+  }
+  if(o.compare){
+    const adjs = ["fortis","callidus","iratus"].filter(a => (cfg.adjs || []).includes(a));
+    const a = rdPick(adjs.filter(x => !ctx.usedAdj.has(x)), want, x => rdAdjKey(x, "comparative"));
+    if(!a) return null;
+    C.pred = {adj:a, degree:"comparative"};
+    ctx.usedAdj.add(a);
+    const pool = cfg.people.filter(l => !ctx.used.has(l));
+    const q = rdPick(pool, want); if(!q) return null; ctx.used.add(q);
+    C.quam = rdNewNP(cfg, q, "nom", 0);
+    C.subj && (C.subj.num = 0); C.p = C.pronoun ? C.p : 2;
+    if(C.pronoun && C.p >= 3) return null;
+  } else if(o.place || (!o.pred && cfg.features.place && !ctx.used.has("villa") && rdChance(want.has("in") || want.has("villa") ? 0.6 : 0.2))){
+    C.place = "in"; ctx.used.add("villa");
+  } else {
+    const opts = [];
+    (o.predAdjs || ["fessus","iratus","callidus","fortis"]).filter(a => (cfg.adjs || []).includes(a)).forEach(a=>{
+      // positive fortis only where the form is plain "fortis"
+      if(!(a === "fortis" && C.p !== 2)) opts.push({adj:a, degree:"positive", key:a});
+      if(RD_DEG_KEY[a]) opts.push({adj:a, degree:"superlative", key:rdAdjKey(a, "superlative")});
+    });
+    if(!opts.length) return null;
+    const opts2 = opts.filter(x => !ctx.usedAdj.has(x.adj));
+    if(!opts2.length) return null;
+    const pk = rdPick(opts2, want, x => x.key);
+    C.pred = {adj:pk.adj, degree:pk.degree};
+    ctx.usedAdj.add(pk.adj);
+    if(pk.degree === "positive" && (pk.adj === "fessus" || pk.adj === "iratus") && cfg.features.adv && !ctx.usedAdv.has("valde") &&
+       rdChance(want.has("valde") ? 0.7 : 0.15)){
+      C.pred.valde = true; ctx.usedAdv.add("valde");
+    }
+  }
+  // adverbs that make sense with "was / is": however, once, suddenly, again
+  const beAdvs = (C.tense === "present" ? ["tamen","iterum"] : ["tamen","olim","subito","iterum"]).filter(a => !o.advSet || o.advSet.includes(a));
+  if(!C.pronoun){ const o2 = Object.assign({}, o, {noAdj: !!C.pred, noQuant: !!o.compare, noGen: false, advSet: beAdvs}); rdDecorate(cfg, ctx, C, want, o2); }
+  else if(cfg.features.neg && rdChance(want.has("non") ? 0.4 : 0.1)) C.neg = true;
+  if(C.pred && C.pred.valde) C.adv = C.adv === "valde" ? null : C.adv;
+  return C;
+}
+
+// ---------- turning a clause into Latin words + marking units ----------
+function rdCtx(cfg){
+  return {cfg, used:new Set(), usedVerbs:new Set(), usedAdv:new Set(), usedAdj:new Set(), decor:0, genDone:false,
+          rows:[], units:[], cons:[], groups:{}, keys:new Set(), gid:0};
+}
+function rdKeyNoun(cfg, lemma, kase, num){
+  if(cfg.coverage === "forms"){
+    const t = cfg.formTitles && cfg.formTitles[lemma];
+    return t ? t + " :: " + RD_CASE_NAMES[kase] + " " + (num ? "plural" : "singular") : null;
+  }
+  return lemma;
+}
+function rdKeyVerb(cfg, lemma, tense, p){
+  if(cfg.coverage === "forms"){
+    const t = cfg.verbTitles && cfg.verbTitles[lemma];
+    return t ? t[tense] + " :: " + ["I","you (s)","he / she / it","we","you (pl)","they"][p] : null;
+  }
+  return lemma;
+}
+function rdKeyWord(cfg, k){ return cfg.coverage === "forms" ? null : k; }
+// a marking unit: one Latin word (or two, like "non vidit") and the
+// English that counts for it
+function rdUnit(ctx, u){
+  u.id = ctx.units.length;
+  u.keys = (u.keys || []).filter(Boolean);
+  u.alts = u.alts.map(a => typeof a === "string" ? {t: rdTokens(a)} : Object.assign({}, a, {t: rdTokens(a.s)}));
+  const okSet = new Set(u.alts.map(a => a.t.join(" ")));
+  u.wrongs = (u.wrongs || []).map(w => Object.assign({}, w, {t: rdTokens(w.s)})).filter(w => w.t.length && !okSet.has(w.t.join(" ")));
+  ctx.units.push(u);
+  u.keys.forEach(k => ctx.keys.add(k));
+  if(ctx.rows[u.rid]) ctx.rows[u.rid].units.push(u.id);
+  return u.id;
+}
+function rdRow(ctx, latin, html){ ctx.rows.push({latin, html, units:[]}); return ctx.rows.length - 1; }
+function rdGroup(ctx, ids){ const g = "g" + (ctx.gid++); ctx.groups[g] = ids.filter(x => x != null); return g; }
+function rdNounEnglish(lemma, num){ return RD_NOUN_EN[lemma][num]; }
+function rdPossAlts(lemma, num){
+  const out = [];
+  rdNounEnglish(lemma, num).forEach(w=>{
+    if(num === 0){ out.push(w + "'s"); out.push(w + "s"); }
+    else if(/s$/.test(w)){ out.push(w + "'"); out.push(w); }
+    else { out.push(w + "'s"); out.push(w + "s"); }
+  });
+  return out;
+}
+function rdNPCanon(np){
+  if(np.subst) return "the others";
+  const noun = rdNounEnglish(np.lemma, np.num)[0];
+  const adj = np.adj ? RD_ADJ_EN[np.adj.adj][np.adj.degree][0] + " " : "";
+  if(np.poss){
+    const p = rdNounEnglish(np.poss.lemma, np.poss.num)[0];
+    return np.poss.num ? "the " + adj + noun + " of the " + p : "the " + (np.poss.num ? p + "'" : p + "'s") + " " + adj + noun;
+  }
+  if(np.quant) return RD_QUANT_EN[np.quant].canon + " " + adj + noun;
+  if(np.lemma === "pecunia") return "the " + adj + noun;
+  return "the " + adj + noun;
+}
+// Emits an NP's Latin words (quantifier, noun, adjective, genitive) and
+// its units. Returns ids for the ordering checks.
+function rdEmitNP(ctx, toks, np, ci, roleText){
+  const cfg = ctx.cfg;
+  const res = {};
+  if(np.subst){
+    const w = rdQuantForm("ceteri", "m", np.kase, 1);
+    const rid = rdRow(ctx, w, "<b>" + w + "</b> = the others / the rest <span>(" + RD_CASE_NAMES[np.kase] + " plural — " + roleText + ")</span>");
+    toks.push({w, t:"adj", r:{lemma:"ceteri", degree:"quant", kase:np.kase, num:1}, att:"subst"});
+    res.noun = rdUnit(ctx, {rid, role:"noun", clause:ci, keys:[rdKeyWord(cfg, "ceteri")], alts: RD_QUANT_EN.ceteri.subst,
+      wrongs: [], expect:"the others", np:true});
+    res.head = rdGroup(ctx, [res.noun]); res.all = res.head;
+    return res;
+  }
+  const n = rdNoun(np.lemma);
+  const latin = rdNounForm(np.lemma, np.kase, np.num);
+  const numName = np.num ? "plural" : "singular";
+  let qId = null, aId = null, gId = null;
+  const startIdx = toks.length;
+  if(np.quant){
+    const qw = rdQuantForm(np.quant, n.g, np.kase, np.num);
+    const rid = rdRow(ctx, qw, "<b>" + qw + "</b> = " + RD_QUANT_EN[np.quant].en[0] + " <span>(goes with " + latin + ")</span>");
+    toks.push({w:qw, t:"adj", r:{lemma:np.quant, degree:"quant", kase:np.kase, num:np.num}, att: startIdx + 1});
+    qId = rdUnit(ctx, {rid, role:"quant", clause:ci, keys:[rdKeyWord(cfg, np.quant)], alts: RD_QUANT_EN[np.quant].en, expect: RD_QUANT_EN[np.quant].en[0]});
+  }
+  const nounIdx = toks.length;
+  const nounEn = rdNounEnglish(np.lemma, np.num);
+  const rid = rdRow(ctx, latin, "<b>" + latin + "</b> = " + (np.kase === "dat" ? "to/for the " : "the ") + nounEn[0] +
+    " <span>(" + RD_CASE_NAMES[np.kase] + " " + numName + " — " + roleText + ")</span>");
+  toks.push({w:latin, t:"noun", r:{lemma:np.lemma, kase:np.kase, num:np.num}});
+  const other = np.num ? 0 : 1;
+  const wrongs = [];
+  if(!(n.sgOnly && np.num === 0 && np.lemma === "pecunia")){
+    rdNounEnglish(np.lemma, other).forEach(w => wrongs.push({s:w, why: latin + " is " + numName + " — “" + nounEn[0] + "”"}));
+  }
+  const nounId = rdUnit(ctx, {rid, role:"noun", clause:ci, keys:[rdKeyNoun(cfg, np.lemma, np.kase, np.num)], alts: nounEn,
+    wrongs, expect: nounEn[0], kase: np.kase});
+  if(np.adj){
+    const aw = sbAdjForm(np.adj.adj, np.adj.degree, n.g, np.kase, np.num);
+    const en = RD_ADJ_EN[np.adj.adj][np.adj.degree];
+    const degTxt = np.adj.degree === "positive" ? "" : np.adj.degree + ", ";
+    const arid = rdRow(ctx, aw, "<b>" + aw + "</b> = " + en[0] + " <span>(" + degTxt + "goes with " + latin + ")</span>");
+    toks.push({w:aw, t:"adj", r:{lemma:np.adj.adj, degree:np.adj.degree, kase:np.kase, num:np.num}, att: nounIdx});
+    const wr = [];
+    Object.keys(RD_ADJ_EN[np.adj.adj]).filter(d => d !== np.adj.degree).forEach(d =>
+      RD_ADJ_EN[np.adj.adj][d].forEach(s => wr.push({s, why: aw + " is " + np.adj.degree + " — “" + en[0] + "”"})));
+    aId = rdUnit(ctx, {rid:arid, role:"adj", clause:ci, keys:[rdKeyWord(cfg, rdAdjKey(np.adj.adj, np.adj.degree))], alts: en, wrongs: wr, expect: en[0]});
+  }
+  const head = rdGroup(ctx, [qId, aId, nounId]);
+  if(np.poss){
+    const pw = rdNounForm(np.poss.lemma, "gen", np.poss.num);
+    const pn = np.poss.num ? "plural" : "singular";
+    const pEn = rdNounEnglish(np.poss.lemma, np.poss.num);
+    const grid = rdRow(ctx, pw, "<b>" + pw + "</b> = of the " + pEn[0] + " / the " + (np.poss.num ? (/s$/.test(pEn[0]) ? pEn[0] + "'" : pEn[0] + "'s") : pEn[0] + "'s") +
+      " <span>(genitive " + pn + " — goes with " + latin + ")</span>");
+    toks.push({w:pw, t:"noun", r:{lemma:np.poss.lemma, kase:"gen", num:np.poss.num}});
+    const alts = [];
+    rdPossAlts(np.poss.lemma, np.poss.num).forEach(s => alts.push({s, cons:[{k:"adj", a:"self", b:head}]}));
+    pEn.forEach(w => alts.push({s:"of " + w, cons:[{k:"adj", a:nounId, b:"self"}]}));
+    const wr = [];
+    rdPossAlts(np.poss.lemma, np.poss.num ? 0 : 1).forEach(s => { if(!alts.some(a => a.s === s)) wr.push({s, why: pw + " is " + pn + " — “" + (np.poss.num ? "of the " + pEn[0] : "the " + pEn[0] + "'s") + "”"}); });
+    rdNounEnglish(np.poss.lemma, np.poss.num ? 0 : 1).forEach(w => wr.push({s:"of " + w, why: pw + " is " + pn + " — “of the " + pEn[0] + "”"}));
+    gId = rdUnit(ctx, {rid:grid, role:"gen", clause:ci, keys:[rdKeyNoun(cfg, np.poss.lemma, "gen", np.poss.num)], alts, wrongs: wr,
+      expect: "of the " + pEn[0], blameMsg: pw + " is genitive and goes with " + latin + " — “" + rdNPCanon(np) + "”"});
+  }
+  res.noun = nounId; res.head = head; res.all = rdGroup(ctx, [qId, aId, nounId, gId]);
+  return res;
+}
+
+const RD_ROLE_TEXT = {nom:"the subject: who is doing it", acc:"the object: who/what it's done to", dat:"to/for someone", abl:"after the preposition"};
+
+// Emits one clause. Returns {toks (for the one-meaning check), english, ids}
+function rdEmitClause(ctx, C, ci, opts){
+  opts = opts || {};
+  const cfg = ctx.cfg;
+  const toks = [];
+  const ids = {adv:null, units:[]};
+  const firstUnit = ctx.units.length;
+  // --- Latin order: [question word] [adverb] subject [tamen] dative object [place] [predicate] [non] verb ---
+  let qId = null, advId = null, subj = null, subj2 = null, etId = null, dat = null, obj = null, nihilId = null;
+  let prepId = null, place = null, predId = null, valdeId = null, quamId = null, quamNP = null;
+  if(C.q === "quis"){
+    const rid = rdRow(ctx, "quis", "<b>quis?</b> = who?");
+    toks.push({w:"quis", t:"quis"});
+    qId = rdUnit(ctx, {rid, role:"q", clause:ci, keys:[rdKeyWord(cfg, "quis?")], alts: RD_WORD_EN["quis?"], expect:"who"});
+  }
+  if(C.ubiq){
+    const rid = rdRow(ctx, "ubi", "<b>ubi</b> = where? <span>(in a question)</span>");
+    toks.push({w:"ubi", t:"ubiq"});
+    qId = rdUnit(ctx, {rid, role:"q", clause:ci, keys:[rdKeyWord(cfg, "ubi")], alts: RD_WORD_EN.ubiWhere, expect:"where"});
+  }
+  const advFront = C.adv && RD_ADVS[C.adv].front && C.adv !== "tamen";
+  const emitAdv = () => {
+    const A = RD_ADVS[C.adv];
+    const rid = rdRow(ctx, C.adv, "<b>" + C.adv + "</b> = " + A.en[0]);
+    toks.push({w:C.adv, t:"x"});
+    advId = rdUnit(ctx, {rid, role:"adv", clause:ci, keys:[rdKeyWord(cfg, C.adv)], alts: A.en, expect: A.en[0], adv:true});
+  };
+  if(advFront && !opts.advLate) emitAdv();
+  if(!C.ubiq){
+    if(C.compound){
+      subj = rdEmitNP(ctx, toks, C.compound[0], ci, "one of the two subjects");
+      const rid = rdRow(ctx, "et", "<b>et</b> = and");
+      toks.push({w:"et", t:"et"});
+      etId = rdUnit(ctx, {rid, role:"et", clause:ci, keys:[rdKeyWord(cfg, "et")], alts: RD_WORD_EN.et, expect:"and"});
+      subj2 = rdEmitNP(ctx, toks, C.compound[1], ci, "one of the two subjects");
+    } else if(C.subj){
+      subj = rdEmitNP(ctx, toks, C.subj, ci, RD_ROLE_TEXT.nom);
+    }
+  }
+  if(C.adv === "tamen" || (advFront && opts.advLate)) emitAdv();
+  if(C.dat) dat = rdEmitNP(ctx, toks, C.dat, ci, RD_ROLE_TEXT.dat);
+  if(C.obj) obj = rdEmitNP(ctx, toks, C.obj, ci, RD_ROLE_TEXT.acc);
+  if(C.nihil){
+    const rid = rdRow(ctx, "nihil", "<b>nihil</b> = nothing <span>(the object)</span>");
+    toks.push({w:"nihil", t:"nihil"});
+    nihilId = rdUnit(ctx, {rid, role:"obj1", clause:ci, keys:[rdKeyWord(cfg, "nihil")], alts: RD_WORD_EN.nihil, expect:"nothing"});
+  }
+  if(C.place){
+    const prep = C.place;
+    const rid = rdRow(ctx, prep, "<b>" + prep + "</b> = " + (prep === "in" ? "in" : "out of / from") + " <span>(+ ablative)</span>");
+    toks.push({w:prep, t:"prep"});
+    prepId = rdUnit(ctx, {rid, role:"prep", clause:ci, keys:[rdKeyWord(cfg, prep)],
+      alts: prep === "e" ? (C.verb === "exeo" ? RD_WORD_EN.e : ["out of","from"]) : RD_WORD_EN["in"], expect: prep === "in" ? "in" : "out of"});
+    place = rdEmitNP(ctx, toks, {lemma:"villa", kase:"abl", num:0}, ci, RD_ROLE_TEXT.abl);
+  }
+  if(C.pred){
+    const subjNP = C.subj && !C.subj.subst ? C.subj : null;
+    const g = subjNP ? rdNoun(subjNP.lemma).g : (C.ref && C.ref.g) || "m";
+    const num = C.p >= 3 ? 1 : 0;
+    if(C.pred.valde){
+      const rid = rdRow(ctx, "valde", "<b>valde</b> = very");
+      toks.push({w:"valde", t:"x"});
+      valdeId = rdUnit(ctx, {rid, role:"valde", clause:ci, keys:[rdKeyWord(cfg, "valde")], alts:["very","really","extremely","so"], expect:"very"});
+    }
+    const aw = sbAdjForm(C.pred.adj, C.pred.degree, g, "nom", num);
+    const en = RD_ADJ_EN[C.pred.adj][C.pred.degree];
+    const rid = rdRow(ctx, aw, "<b>" + aw + "</b> = " + en[0] + " <span>(" + (C.pred.degree === "positive" ? "" : C.pred.degree + ", ") + "describes the subject)</span>");
+    toks.push({w:aw, t:"adj", r:{lemma:C.pred.adj, degree:C.pred.degree, kase:"nom", num}, att:"pred"});
+    const wr = [];
+    Object.keys(RD_ADJ_EN[C.pred.adj]).filter(d => d !== C.pred.degree).forEach(d =>
+      RD_ADJ_EN[C.pred.adj][d].forEach(s => wr.push({s, why: aw + " is " + C.pred.degree + " — “" + en[0] + "”"})));
+    predId = rdUnit(ctx, {rid, role:"pred", clause:ci, keys:[rdKeyWord(cfg, rdAdjKey(C.pred.adj, C.pred.degree))], alts: en, wrongs: wr, expect: en[0]});
+    if(C.quam){
+      const qrid = rdRow(ctx, "quam", "<b>quam</b> = than");
+      toks.push({w:"quam", t:"quam"});
+      quamId = rdUnit(ctx, {rid:qrid, role:"quam", clause:ci, keys:[rdKeyWord(cfg, "quam")], alts: RD_WORD_EN.quam, expect:"than"});
+      quamNP = rdEmitNP(ctx, toks, C.quam, ci, "the one being compared (same case as the subject)");
+    }
+  }
+  if(C.adv && !advFront && C.adv !== "tamen") emitAdv();
+  // --- the verb (with "non" and the person if there's no subject word) ---
+  const vLatin = rdVerbForm(C.verb, C.tense, C.p);
+  if(!vLatin) return null;
+  const vDisplay = (C.neg ? "non " : "") + vLatin;
+  const pers = RD_PERSON_DESC[C.p];
+  const hasObj = !!(C.obj || C.nihil);
+  const canon = rdVerbCanon(C.verb, C.tense, C.neg, C.p, {obj: hasObj});
+  const timeoBe = C.verb === "timeo";
+  const vAlts = rdVerbAlts(C.verb, C.tense, C.neg, {obj: hasObj, plup: !!opts.plup});
+  const vRid = rdRow(ctx, vDisplay, "<b>" + vDisplay + "</b> = " + (C.pronoun ? RD_PRON_CANON[C.p] + " " : "") + canon +
+    (timeoBe && hasObj ? " (or “was afraid of”)" : "") + " <span>(" + C.tense + ", " + pers + ")</span>");
+  if(C.neg) toks.push({w:"non", t:"x"});
+  toks.push({w:vLatin, t:"verb", lemma:C.verb, p:C.p});
+  const vWrongs = [];
+  ["present","imperfect","perfect"].filter(t => t !== C.tense && !(C.verb === "sum" && t === "perfect")).forEach(t=>{
+    rdVerbAlts(C.verb, t, C.neg, {obj: hasObj}).forEach(s => vWrongs.push({s, why: vLatin + " is " + rdTenseHint(C.verb, C.tense).replace(":", " —")}));
+  });
+  if(C.neg){
+    rdVerbAlts(C.verb, C.tense, false, {obj: hasObj, plup: !!opts.plup}).forEach(s => vWrongs.push({s, why:"non = not — “" + canon + "”",
+      okKeys:[rdKeyVerb(cfg, C.verb, C.tense, C.p)], badKeys:[rdKeyWord(cfg, "non")]}));
+  } else {
+    rdVerbAlts(C.verb, C.tense, true, {obj: hasObj}).forEach(s => vWrongs.push({s, why:"there's no “non” here, so no “not” — “" + canon + "”"}));
+  }
+  const vKeys = [rdKeyVerb(cfg, C.verb, C.tense, C.p)];
+  if(C.neg) vKeys.push(rdKeyWord(cfg, "non"));
+  const verbId = rdUnit(ctx, {rid:vRid, role:"verb", clause:ci, keys:vKeys, alts: vAlts, wrongs: vWrongs, expect: canon});
+  let pronId = null;
+  if(C.pronoun){
+    const alts = RD_PRON[C.p].slice();
+    if(C.ref && C.ref.np) rdNounEnglish(C.ref.np.lemma, C.ref.np.num).forEach(w => alts.push(w));
+    const wr = [];
+    RD_PRON.forEach((list, i) => { if(i !== C.p) list.forEach(s => { if(!alts.includes(s)) wr.push({s, why: "the ending of " + vLatin + " means " + RD_PRON_CANON[C.p] + " (" + pers + ")"}); }); });
+    pronId = rdUnit(ctx, {rid:vRid, role:"pron", clause:ci, keys:[rdKeyVerb(cfg, C.verb, C.tense, C.p)], alts, wrongs: wr, expect: RD_PRON_CANON[C.p]});
+  }
+  if(C.ubiq){
+    subj = rdEmitNP(ctx, toks, C.subj, ci, RD_ROLE_TEXT.nom);
+  }
+  // --- word-order checks for the English ---
+  const blame = (a, b, k, who, msg) => ctx.cons.push({k, a, b, blame: who, msg});
+  if(subj && !C.ubiq){
+    const g = subj2 ? rdGroup(ctx, ctx.groups[subj.all].concat([etId], ctx.groups[subj2.all])) : subj.all;
+    ctx.cons.push({k:"before", a:g, b:verbId, blame:[subj.noun].concat(subj2 ? [subj2.noun] : []), msg: subjMsg(C, subj, subj2)});
+    if(subj2){ ctx.cons.push({k:"before", a:subj.all, b:etId, blame:[etId]}); ctx.cons.push({k:"before", a:etId, b:subj2.all, blame:[etId]}); }
+  }
+  if(C.ubiq){
+    ctx.cons.push({k:"before", a:qId, b:verbId, blame:[qId]});
+    ctx.cons.push({k:"before", a:verbId, b:subj.all, blame:[subj.noun]});
+  }
+  if(C.q === "quis") ctx.cons.push({k:"before", a:qId, b:verbId, blame:[qId], msg:"quis = who — the one doing it"});
+  if(pronId != null) ctx.cons.push({k:"near", a:pronId, b:verbId, blame:[pronId], msg: "the ending of " + vLatin + " = " + RD_PRON_CANON[C.p] + " — the one doing it"});
+  if(obj) ctx.cons.push({k:"before", a:verbId, b:obj.all, blame:[obj.noun], msg: objMsg(C.obj)});
+  if(nihilId != null) ctx.cons.push({k:"before", a:verbId, b:nihilId, blame:[nihilId]});
+  if(dat) ctx.cons.push({k:"datpos", np:dat.all, head:dat.head, verb:verbId, obj: obj ? obj.all : null, blame:[dat.noun],
+    msg: rdNounForm(C.dat.lemma, "dat", C.dat.num) + " is dative — “to the " + rdNounEnglish(C.dat.lemma, C.dat.num)[0] + "”"});
+  if(prepId != null){ ctx.cons.push({k:"adj", a:prepId, b:place.head, blame:[prepId]}); }
+  if(predId != null) ctx.cons.push({k:"before", a:verbId, b:predId, blame:[predId]});
+  if(valdeId != null) ctx.cons.push({k:"adj", a:valdeId, b:predId, blame:[valdeId]});
+  if(quamId != null){ ctx.cons.push({k:"before", a:predId, b:quamId, blame:[quamId]}); ctx.cons.push({k:"adj", a:quamId, b:quamNP.head, blame:[quamNP.noun]}); }
+  // NP-internal: quantifier and adjective right before their noun
+  ctx.units.slice(firstUnit).forEach(u=>{
+    if(u.role === "quant" || u.role === "adj"){
+      // the next unit in the same head group
+      const g = Object.keys(ctx.groups).find(k => ctx.groups[k].includes(u.id) && ctx.groups[k].length > 1 && !ctx.groups[k].some(id => ctx.units[id].role === "gen"));
+      if(!g) return;
+      const members = ctx.groups[g];
+      const next = members[members.indexOf(u.id) + 1];
+      if(next != null) ctx.cons.push({k:"adj", a:u.id, b:next, blame:[u.id], soft:true});
+    }
+  });
+  ids.units = ctx.units.slice(firstUnit).map(u => u.id).filter(id => !ctx.units[id].adv);
+  ids.adv = advId;
+  // --- model English ---
+  let en = "";
+  const sNP = C.subj ? rdNPCanon(C.subj) : null;
+  const objEn = C.obj ? " " + rdNPCanon(C.obj) : C.nihil ? " nothing" : "";
+  const datEn = C.dat ? (C.frame === "dat" && C.verb === "credo" ? " " : " to ") + rdNPCanon(C.dat) : "";
+  const placeEn = C.place ? (C.place === "in" ? " in the house" : " out of the house") : "";
+  const verbEn = canon;
+  const predEn = C.pred ? " " + (C.pred.valde ? "very " : "") + RD_ADJ_EN[C.pred.adj][C.pred.degree][0] + (C.quam ? " than " + rdNPCanon(C.quam) : "") : "";
+  if(C.ubiq){
+    en = "where " + verbEn + " " + sNP;
+  } else {
+    const who = C.q === "quis" ? "who" : C.compound ? rdNPCanon(C.compound[0]) + " and " + rdNPCanon(C.compound[1]) :
+      C.pronoun ? (C.ref && C.ref.pron ? C.ref.pron : RD_PRON_CANON[C.p]) : sNP;
+    en = who + " " + verbEn + objEn + datEn + placeEn + predEn;
+  }
+  if(C.adv){
+    const a = RD_ADVS[C.adv].en[0];
+    if(C.adv === "tamen") en = "however, " + en;
+    else if(RD_ADVS[C.adv].front) en = a + " " + en;
+    else en = en + " " + a;
+  }
+  return {toks, english: en, ids, verbId};
+}
+function subjMsg(C, subj, subj2){
+  if(C.compound) return "the two nominatives (joined by et) are the subject — the ones doing it";
+  if(C.subj.subst) return "ceteri is nominative — the subject (“the others”)";
+  return rdNounForm(C.subj.lemma, "nom", C.subj.num) + " is nominative — the one doing it";
+}
+function objMsg(np){
+  if(np.subst) return "ceteros is accusative — the object";
+  return rdNounForm(np.lemma, np.kase, np.num) + " is accusative — the one it's done to";
+}
+
+// ---------- whole sentences ----------
+function rdCap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function rdLatinOf(toks){ return toks.map(t => t.w).join(" "); }
+function rdWantAny(want, keys){ return keys.some(k => want.has(k)); }
+function rdFrameWeights(cfg, want){
+  const F = cfg.features, W = {simple: 5};
+  if(F.be) W.be = rdWantAny(want, ["sum","fessus","iratus","callidus","fortis","fortissimus","callidissimus","iratissimus","valde","in","villa"]) ? 2.5 : 1;
+  if(F.compare) W.compare = rdWantAny(want, ["quam","fortior","callidior","iratior"]) ? 7 : 0.5;
+  if(F.quis) W.quis = want.has("quis?") ? 7 : 0.5;
+  if(F.ubiest) W.ubiest = want.has("ubi") ? 3 : 0.4;
+  if(F.coord) W.coord = rdWantAny(want, ["et","sed"]) ? 5 : 0.8;
+  if(F.sub) W.sub = rdWantAny(want, ["postquam","quod","ubi"]) ? 6 : 1;
+  return W;
+}
+function rdPickFrame(cfg, want){
+  const W = rdFrameWeights(cfg, want);
+  let total = 0; for(const k in W) total += W[k];
+  let r = Math.random() * total;
+  for(const k in W){ r -= W[k]; if(r <= 0) return k; }
+  return "simple";
+}
+function rdAssemble(ctx, frame, latin, english, parts, extra){
+  return Object.assign({
+    frame, latin, english,
+    units: ctx.units, cons: ctx.cons, groups: ctx.groups, rows: ctx.rows,
+    keys: [...ctx.keys], parts,
+  }, extra || {});
+}
+function rdBuildFrame(cfg, ctx, frame, want){
+  const conjUnit = (k, alts, expect) => {
+    const rid = rdRow(ctx, k, "<b>" + k + "</b> = " + expect);
+    return {rid, id: rdUnit(ctx, {rid, role:"conj", clause:-1, keys:[rdKeyWord(cfg, k === "ubi" ? "ubi" : k)], alts, expect})};
+  };
+  if(frame === "simple" || frame === "be" || frame === "compare" || frame === "quis"){
+    let C;
+    if(frame === "simple") C = rdClause(cfg, ctx, want, {});
+    else if(frame === "quis") C = rdClause(cfg, ctx, want, {q:"quis", noCompound:true});
+    else C = rdBeClause(cfg, ctx, want, {compare: frame === "compare"});
+    if(!C) return null;
+    const E = rdEmitClause(ctx, C, 0, {});
+    if(!E) return null;
+    const end = frame === "quis" ? "?" : ".";
+    return rdAssemble(ctx, frame, rdLatinOf(E.toks) + end, rdCap(E.english) + end, [E], {tenses:[C.tense]});
+  }
+  if(frame === "ubiest"){
+    if(!cfg.verbs.includes("sum")) return null;
+    ctx.usedVerbs.add("sum");
+    const C = {verb:"sum", tense: sbRand(["present","imperfect"]), neg:false, adv:null, frame:"be", ubiq:true};
+    const pool = cfg.people.concat(cfg.things).filter(l => !ctx.used.has(l));
+    const l = rdPick(pool, want); if(!l) return null; ctx.used.add(l);
+    C.subj = rdNewNP(cfg, l, "nom"); C.p = C.subj.num ? 5 : 2;
+    rdDecorate(cfg, ctx, C, want, {noAdv:true, noNeg:true, noQuant:true});
+    const E = rdEmitClause(ctx, C, 0, {});
+    if(!E) return null;
+    return rdAssemble(ctx, frame, rdLatinOf(E.toks) + "?", rdCap(E.english) + "?", [E], {tenses:[C.tense]});
+  }
+  if(frame === "coord"){
+    const conj = rdPick(["et","sed"], want);
+    const C1 = rdChance(0.25) ? rdBeClause(cfg, ctx, want, {}) : rdClause(cfg, ctx, want, {noCompound:true, inPair:true, pronChance:0.1});
+    if(!C1) return null;
+    const C2 = rdClause(cfg, ctx, want, {noCompound:true, inPair:true, pronChance:0.15, advSet: RD_MID_ADVS});
+    if(!C2) return null;
+    const E1 = rdEmitClause(ctx, C1, 0, {});
+    if(!E1) return null;
+    const cu = conjUnit(conj, RD_WORD_EN[conj], conj === "et" ? "and" : "but");
+    const E2 = rdEmitClause(ctx, C2, 1, {});
+    if(!E2) return null;
+    const g0 = rdGroup(ctx, E1.ids.units), g1 = rdGroup(ctx, E2.ids.units);
+    ctx.cons.push({k:"coord", c0:g0, conj:cu.id, c1:g1, blame:[cu.id], msg: conj + " joins the two halves — “" + (conj === "et" ? "and" : "but") + "” goes between them"});
+    const latin = rdLatinOf(E1.toks) + (conj === "sed" ? ", sed " : " et ") + rdLatinOf(E2.toks) + ".";
+    const english = rdCap(E1.english) + (conj === "sed" ? ", but " : " and ") + E2.english + ".";
+    return rdAssemble(ctx, frame, latin, english, [E1, E2], {tenses:[C1.tense, C2.tense]});
+  }
+  if(frame === "sub"){
+    const conj = rdPick(["postquam","ubi","quod"], want);
+    if(conj === "quod"){
+      const main = rdChance(0.3) ? rdBeClause(cfg, ctx, want, {}) : rdClause(cfg, ctx, want, {noCompound:true, inPair:true, pronChance:0.1});
+      if(!main) return null;
+      let sub;
+      if(main.subj && !main.subj.subst && rdChance(0.6)){
+        const g = rdNoun(main.subj.lemma).g;
+        const ref = {np: main.subj, g, pron: main.p === 5 ? "they" : g === "f" ? "she" : "he"};
+        sub = (main.verb !== "sum" && rdChance(0.5)) ? rdBeClause(cfg, ctx, want, {p: main.p, ref, noAdv:true, predAdjs:["fessus","iratus"]}) :
+              rdClause(cfg, ctx, want, {p: main.p, ref, noCompound:true, inPair:true, noAdv:true, verbs: RD_CAUSE_VERBS});
+      } else {
+        sub = rdClause(cfg, ctx, want, {noCompound:true, inPair:true, pronChance:0.1, noAdv:true, verbs: RD_CAUSE_VERBS});
+      }
+      if(!sub) return null;
+      const Em = rdEmitClause(ctx, main, 0, {});
+      if(!Em) return null;
+      const cu = conjUnit("quod", RD_WORD_EN.quod, "because");
+      const Es = rdEmitClause(ctx, sub, 1, {});
+      if(!Es) return null;
+      const gm = rdGroup(ctx, Em.ids.units), gs = rdGroup(ctx, Es.ids.units);
+      ctx.cons.push({k:"sub", conj:cu.id, sub:gs, main:gm, blame:[cu.id], msg:"quod = because — it goes with the second half"});
+      const latin = rdLatinOf(Em.toks) + ", quod " + rdLatinOf(Es.toks) + ".";
+      const english = rdCap(Em.english) + " because " + Es.english + ".";
+      return rdAssemble(ctx, frame, latin, english, [Em, Es], {tenses:[main.tense, sub.tense]});
+    }
+    const sub = rdClause(cfg, ctx, want, {tenses: conj === "postquam" ? ["perfect"] : ["perfect","imperfect"], noCompound:true, inPair:true, pronChance:0.1, noAdv:true});
+    if(!sub) return null;
+    // "after / when X happened, Y happened": the main half is in the past too
+    const main = rdChance(0.2) ? rdBeClause(cfg, ctx, want, {advSet: RD_MID_ADVS, tenses:["imperfect"]}) :
+      rdClause(cfg, ctx, want, {noCompound:true, inPair:true, pronChance:0.1, advSet: RD_MID_ADVS, tenses:["perfect","imperfect"]});
+    if(!main) return null;
+    const word = conj === "postquam" ? "after" : "when";
+    const cu = conjUnit(conj, conj === "postquam" ? RD_WORD_EN.postquam : RD_WORD_EN.ubiWhen, word);
+    const Es = rdEmitClause(ctx, sub, 1, {plup: true});
+    if(!Es) return null;
+    const Em = rdEmitClause(ctx, main, 0, {});
+    if(!Em) return null;
+    const gm = rdGroup(ctx, Em.ids.units), gs = rdGroup(ctx, Es.ids.units);
+    ctx.cons.push({k:"sub", conj:cu.id, sub:gs, main:gm, blame:[cu.id], msg: conj + " = " + word + " — it goes with the first half"});
+    const latin = conj + " " + rdLatinOf(Es.toks) + ", " + rdLatinOf(Em.toks) + ".";
+    const english = rdCap(word) + " " + Es.english + ", " + Em.english + ".";
+    return rdAssemble(ctx, frame, latin, english, [Es, Em], {tenses:[sub.tense, main.tense]});
+  }
+  return null;
+}
+function rdMakeSentence(cfg, want){
+  want = want || new Set();
+  for(let tries = 0; tries < 60; tries++){
+    const ctx = rdCtx(cfg);
+    let S = null;
+    try { S = rdBuildFrame(cfg, ctx, rdPickFrame(cfg, want), want); } catch(e){ S = null; }
+    if(!S) continue;
+    if(!S.parts.every(p => rdUnique(cfg, p.toks))) continue;
+    return S;
+  }
+  return null;
+}
+
+// ---------- marking ----------
+function rdGroupSpan(S, asg, g){
+  if(typeof g === "number") return asg[g] ? {s: asg[g].s, e: asg[g].e} : null;
+  let s = Infinity, e = -Infinity;
+  (S.groups[g] || []).forEach(id => { if(asg[id]){ s = Math.min(s, asg[id].s); e = Math.max(e, asg[id].e); } });
+  return s === Infinity ? null : {s, e};
+}
+function rdEvaluate(S, tokens, asg, owner){
+  const failed = new Map(), claimed = new Set();
+  const span = g => rdGroupSpan(S, asg, g);
+  const cons = S.cons.slice();
+  S.units.forEach(u=>{
+    const c = asg[u.id];
+    if(!c) return;
+    (u.alts[c.ai].cons || []).forEach(k => cons.push(Object.assign({}, k, {
+      a: k.a === "self" ? u.id : k.a, b: k.b === "self" ? u.id : k.b, blame: [u.id], msg: u.blameMsg})));
+  });
+  cons.forEach(c=>{
+    let ok = true;
+    if(c.k === "datpos"){
+      const d = span(c.np), v = span(c.verb);
+      if(!d || !v) return;
+      const b = d.s - 1;
+      if(b >= 0 && owner[b] === -1 && (tokens[b] === "to" || tokens[b] === "for")){
+        claimed.add(b);
+        ok = v.e <= b;
+      } else {
+        // without "to", the dative must sit between the verb and the object:
+        // "gave the queen the gift" (and there must BE an object after it)
+        const o = c.obj != null ? span(c.obj) : null;
+        ok = v.e <= d.s && (c.obj == null || (o && d.e <= o.s));
+      }
+    } else if(c.k === "coord"){
+      const a = span(c.c0), k = span(c.conj), b = span(c.c1);
+      if(!a || !k || !b) return;
+      ok = a.e <= k.s && k.e <= b.s;
+    } else if(c.k === "sub"){
+      const k = span(c.conj), s = span(c.sub), m = span(c.main);
+      if(!k || !s || !m) return;
+      ok = k.e <= s.s && (m.e <= k.s || m.s >= s.e);
+    } else {
+      const A = span(c.a), B = span(c.b);
+      if(!A || !B) return;
+      if(c.k === "before") ok = A.e <= B.s;
+      else if(c.k === "adj") ok = A.e === B.s;
+      else if(c.k === "near"){
+        ok = A.e <= B.s;
+        for(let i = A.e; ok && i < B.s; i++) if(!(owner[i] !== -1 && S.units[owner[i]].adv)) ok = false;
+      }
+    }
+    if(!ok) c.blame.forEach(id => { if(asg[id] && !failed.has(id)) failed.set(id, c.msg || null); });
+  });
+  // a word in the wrong place still counts for something, so a swapped
+  // subject/object is reported as "the wrong way round", not as missing
+  let score = 0;
+  S.units.forEach(u => { if(asg[u.id]) score += failed.has(u.id) ? 60 : 100; });
+  tokens.forEach((t, i) => { if(owner[i] === -1 && !claimed.has(i)) score--; });
+  return {score, failed, claimed};
+}
+function rdFindAll(tokens, t, free){
+  const out = [];
+  if(!t.length) return out;
+  for(let s = 0; s + t.length <= tokens.length; s++){
+    let ok = true;
+    for(let k = 0; k < t.length; k++) if(tokens[s+k] !== t[k] || (free && !free(s+k))){ ok = false; break; }
+    if(ok) out.push(s);
+  }
+  return out;
+}
+const RD_ROLE_CAT = {noun:"noun", gen:"noun", verb:"verb", adj:"adj", pred:"adj", quant:"adj", adv:"adv", valde:"adv"};
+// Marks an answer. Returns per-unit results, per-row results, whether the
+// whole sentence is right, and whether "I think mine was right" is allowed.
+function rdCheck(S, answer){
+  const expected = new Set();
+  S.units.forEach(u => u.alts.forEach(a => a.t.forEach(t => expected.add(t))));
+  const tokens = rdCorrect(rdTokens(answer), expected);
+  const n = S.units.length;
+  const cands = S.units.map(u=>{
+    const list = [];
+    u.alts.forEach((a, ai) => rdFindAll(tokens, a.t).forEach(s => list.push({s, e: s + a.t.length, ai})));
+    list.sort((x, y) => (y.e - y.s) - (x.e - x.s) || x.s - y.s);
+    return list.slice(0, 10);
+  });
+  const asg = new Array(n).fill(null), owner = new Array(tokens.length).fill(-1);
+  const order = [...Array(n).keys()].sort((a, b) => cands[a].length - cands[b].length);
+  let best = null, bestScore = -Infinity, nodes = 0;
+  (function dfs(k, matched){
+    if(++nodes > 60000) return;
+    if(100 * (matched + (n - k)) <= bestScore) return;
+    if(k === n){
+      const ev = rdEvaluate(S, tokens, asg, owner);
+      if(ev.score > bestScore){ bestScore = ev.score; best = {asg: asg.slice(), owner: owner.slice(), ev}; }
+      return;
+    }
+    const u = order[k];
+    for(const c of cands[u]){
+      let free = true;
+      for(let i = c.s; i < c.e; i++) if(owner[i] !== -1){ free = false; break; }
+      if(!free) continue;
+      for(let i = c.s; i < c.e; i++) owner[i] = u;
+      asg[u] = c;
+      dfs(k + 1, matched + 1);
+      for(let i = c.s; i < c.e; i++) owner[i] = -1;
+      asg[u] = null;
+    }
+    dfs(k + 1, matched);
+  })(0, 0);
+  if(!best) best = {asg, owner, ev: rdEvaluate(S, tokens, asg, owner)};
+  const used = best.owner.map((o, i) => o !== -1 || best.ev.claimed.has(i));
+  const res = S.units.map(u=>{
+    const c = best.asg[u.id];
+    if(c && !best.ev.failed.has(u.id)) return {st:"ok"};
+    if(c) return {st:"order", msg: best.ev.failed.get(u.id) || null};
+    return {st:"missing"};
+  });
+  // a recognisable wrong answer for a word (wrong tense, singular for plural…)
+  S.units.forEach((u, i)=>{
+    if(res[i].st !== "missing") return;
+    for(const w of u.wrongs){
+      const hits = rdFindAll(tokens, w.t, j => !used[j]);
+      if(hits.length){
+        for(let j = hits[0]; j < hits[0] + w.t.length; j++) used[j] = true;
+        res[i] = {st:"wrong", msg: w.why, okKeys: w.okKeys, badKeys: w.badKeys};
+        break;
+      }
+    }
+  });
+  // "very angry" where it should be just "angry", "used to sing" for "sings":
+  // the right word is there, but inside a wrong phrase
+  S.units.forEach((u, i)=>{
+    if(res[i].st !== "ok") return;
+    const c = best.asg[u.id];
+    for(const w of u.wrongs){
+      if(w.t.length <= c.e - c.s) continue;
+      const hit = rdFindAll(tokens, w.t, j => (j >= c.s && j < c.e) || !used[j]).find(st => st <= c.s && st + w.t.length >= c.e);
+      if(hit != null){
+        for(let j = hit; j < hit + w.t.length; j++) used[j] = true;
+        res[i] = {st:"wrong", msg: w.why, okKeys: w.okKeys, badKeys: w.badKeys};
+        break;
+      }
+    }
+  });
+  const leftover = tokens.filter((t, i) => !used[i]);
+  S.units.forEach((u, i)=>{
+    if(res[i].st !== "missing") return;
+    const cat = RD_ROLE_CAT[u.role];
+    if(cat && leftover.some(t => RD_LEX.has(t) && RD_LEX.get(t).has(cat))) res[i].definite = true;
+  });
+  const okCount = res.filter(r => r.st === "ok").length;
+  const correct = okCount === n && leftover.length === 0;
+  const definite = res.filter(r => r.st === "wrong" || r.st === "order" || r.definite).length;
+  const missing = res.filter(r => r.st === "missing").length;
+  // "I think mine was right" is only offered when the answer is close: no
+  // word recognisably wrong, at most one (two in long sentences) not found,
+  // and nothing left over that's one of his vocab words used wrongly.
+  const leftoverKnown = leftover.filter(t => RD_LEX.has(t) && [...RD_LEX.get(t)].some(c => c !== "func"));
+  const allowOverride = !correct && tokens.length > 0 && definite === 0 && missing <= (n >= 8 ? 2 : 1) &&
+    leftoverKnown.length === 0 && leftover.length <= 4 && okCount >= Math.ceil(n / 2);
+  // one result per Latin word (row): its worst unit
+  const rank = {ok:0, missing:1, wrong:2, order:2};
+  const rows = S.rows.map(r=>{
+    let st = "ok", msg = null;
+    r.units.forEach(id => { const x = res[id]; if(rank[x.st] > rank[st]){ st = x.st; msg = x.msg || null; } else if(rank[x.st] === rank[st] && !msg && x.msg) msg = x.msg; });
+    return {st, msg};
+  });
+  return {tokens, res, rows, correct, okCount, total: n, leftover, allowOverride};
+}
+// Which words were right in this sentence (a word is right only if every
+// part of it was right). "I think mine was right" counts everything right.
+function rdKeyResults(S, check, override){
+  const out = {};
+  S.units.forEach((u, i)=>{
+    const r = check.res[i];
+    u.keys.forEach(k=>{
+      let ok = override || r.st === "ok";
+      if(!override && r.st === "wrong" && r.okKeys && r.okKeys.includes(k)) ok = true;
+      if(!override && r.st === "wrong" && r.badKeys && r.badKeys.includes(k)) ok = false;
+      out[k] = (k in out ? out[k] : true) && ok;
+    });
+  });
+  return out;
+}
+
+// ---------- choosing a round ----------
+// Each round of sentences is built around the words that most need testing:
+// first the ones he got wrong last time, then ones not tested yet, then the
+// ones tested longest ago — and never the same word twice in a round if it
+// can be helped.
+function rdMakeRound(cfg, cov, n){
+  const keys = cfg.coverKeys;
+  const keySet = new Set(keys);
+  const st = k => { const r = cov.words[k]; return !r ? "new" : r.last === "w" ? "wrong" : "right"; };
+  const age = k => { const r = cov.words[k]; return r ? (cov.round - (r.t || 0)) : 99; };
+  const weight = k => !keySet.has(k) ? 0 : st(k) === "wrong" ? 10 : st(k) === "new" ? 8 : Math.min(3, 0.5 + age(k) * 0.5);
+  const inRound = new Set(), picked = [], seenLatin = new Set(), frames = {};
+  for(let i = 0; i < n; i++){
+    const pending = shuffle(keys.filter(k => st(k) !== "right" && !inRound.has(k))).sort((a, b) => weight(b) - weight(a));
+    let wantList = pending.slice(0, 14);
+    if(wantList.length < 6) wantList = wantList.concat(keys.filter(k => st(k) === "right" && !inRound.has(k)).sort((a, b) => age(b) - age(a)).slice(0, 8));
+    const want = new Set(wantList);
+    let best = null, bestScore = -Infinity;
+    for(let c = 0; c < 45; c++){
+      const S = rdMakeSentence(cfg, want);
+      if(!S || seenLatin.has(S.latin)) continue;
+      let score = Math.random() * 0.5;
+      new Set(S.keys).forEach(k => { score += inRound.has(k) ? -3 : weight(k); });
+      score -= (frames[S.frame] || 0) * 2;
+      score -= Math.max(0, S.units.length - 7) * 6;   // keep sentences a sensible length
+      if(score > bestScore){ bestScore = score; best = S; }
+    }
+    if(!best) break;
+    picked.push(best); seenLatin.add(best.latin);
+    best.keys.forEach(k => inRound.add(k));
+    frames[best.frame] = (frames[best.frame] || 0) + 1;
+  }
+  return picked;
+}
+
+// ---------- which weeks have Latin -> English, and what it covers ----------
+const RD_CONFIGS = {
+  // Week 3: every word on the four vocab lists (nouns, verbs, adjectives, other words)
+  "t7-grammar": {
+    coverage: "vocab", coverSets: ["t7-nouns","t7-verbs","t7-adjectives","t7-little"], roundSize: 6, gates: true,
+    people: ["dominus","filia","filius","fur","maritus","regina","rex","servus","uxor","vir"],
+    things: ["donum","liber","pecunia","villa"],
+    verbs: ["amo","canto","capio","consumo","credo","dico","do","dormio","duco","exeo","intellego","interficio","invenio","laboro",
+            "mitto","porto","respondeo","rogo","sedeo","sentio","specto","sto","sum","surgo","timeo","traho","venio","video","voco"],
+    adjs: ["fortis","callidus","iratus","fessus","novus"], quants: ["omnis","nullus","unus","ceteri"],
+    cases: ["nom","acc","gen","dat"],
+    features: {pron:true, compound:true, gen:true, adj:true, quant:true, adv:true, neg:true, place:true, nihil:true,
+               be:true, compare:true, quis:true, ubiest:true, coord:true, sub:true},
+  },
+  // Week 2: puella / servus / rex and porto — every form on the tables
+  "tables-wk2": {
+    coverage: "forms", roundSize: 6, gates: false,
+    people: ["puella","servus","rex"], things: ["donum"], verbs: ["porto"],
+    sgOnly: {rex:true}, sgOnlyRead: {rex:true},
+    frameOverrides: {porto: {acc:"people", things:["donum"], give:true}},
+    cases: ["nom","acc","dat"],
+    features: {pron:true},
+    formTitles: {puella:"Puella — 1st declension (fem.)", servus:"Servus — 2nd declension (masc.)", rex:"Rex — 3rd declension"},
+    verbTitles: {porto: {present:"Porto — present tense", imperfect:"Porto — imperfect tense", perfect:"Porto — perfect tense"}},
+  },
+};
+function rdInitConfigs(){
+  Object.keys(RD_CONFIGS).forEach(id=>{
+    const cfg = RD_CONFIGS[id];
+    cfg.id = id;
+    cfg.allNouns = cfg.people.concat(cfg.things);
+    cfg.readings = rdBuildReadings(cfg);
+    const weeks = SUBJECTS.latin.weeks;
+    if(cfg.coverage === "forms"){
+      const w = weeks.find(x => x.id === id);
+      cfg.coverList = w.items.map(it => ({key: it.key, latin: it.answer, english: it.group.split(" — ")[0] + " · " + it.prompt}));
+    } else {
+      const list = [], seen = new Set();
+      cfg.coverSets.forEach(sid=>{
+        const w = weeks.find(x => x.id === sid);
+        w.words.forEach(word=>{
+          const key = sid === "t7-verbs" ? (word.lemma || word.foreign) : word.foreign;
+          if(seen.has(key)) return;
+          seen.add(key);
+          list.push({key, latin: key, english: word.english.replace(/^I /, "")});
+        });
+      });
+      cfg.coverList = list;
+    }
+    cfg.coverKeys = cfg.coverList.map(x => x.key);
+    const w = weeks.find(x => x.id === id);
+    if(w) w.reading = cfg;
+  });
+}
+
+
 // ================= UTIL =================
 // By default, matching is lenient: accents and capitals are ignored.
 // {keepAccents:true} makes accents/umlauts/ß count (French, German).
@@ -2281,6 +3816,28 @@ Object.keys(SUBJECTS).forEach(key=>{
   const subject = SUBJECTS[key];
   subject.weeks.forEach(week => prepareWeek(subject, week));
 });
+rdInitConfigs(); // Latin -> English for Week 2 and Week 3
+
+// Before this version touches anything, keep a copy of all saved progress
+// (once). If anything ever looks wrong, vcRestoreBackup() puts it back.
+(function backupProgressOnce(){
+  try {
+    const tag = "vocabChalkboard:backup:v21";
+    if(localStorage.getItem(tag)) return;
+    const snap = {};
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf("vocabChalkboard:") === 0 && k.indexOf("vocabChalkboard:backup") !== 0) snap[k] = localStorage.getItem(k);
+    }
+    localStorage.setItem(tag, JSON.stringify({at: new Date().toISOString(), data: snap}));
+  } catch(e){ /* storage unavailable */ }
+})();
+function vcRestoreBackup(){
+  const b = JSON.parse(localStorage.getItem("vocabChalkboard:backup:v21") || "null");
+  if(!b) return "no backup";
+  Object.keys(b.data).forEach(k => localStorage.setItem(k, b.data[k]));
+  return "restored " + Object.keys(b.data).length + " saved sets from " + b.at;
+}
 
 let currentSubjectKey = null;
 let currentWeek = null;
@@ -2336,14 +3893,17 @@ function saveStats(){
   } catch(e){ /* best effort — page still works without saving */ }
 }
 
-// "new" (never tried) · "wrong" (got it wrong last time) · "learning" (1-2 in a row) · "mastered"
+// "new" (never tried, grey) · "wrong" (got it wrong last time, red) ·
+// "way" (on the way: 1 in a row, orange) · "nearly" (nearly there: 2 in a row, yellow) · "mastered" (3, green)
 function itemState(stats, key){
   const r = stats[key];
   if(!r || !r.n) return "new";
   if(r.s >= STREAK_TO_MASTER) return "mastered";
   if(r.s === 0) return "wrong";
-  return "learning";
+  return r.s >= 2 ? "nearly" : "way";
 }
+const STATE_WORDS = {way: "on the way", nearly: "nearly there"};
+function dotsHTML(s){ return '<span class="dots d' + s + '">' + dots(s) + '</span>'; }
 function dots(s){
   let out = "";
   for(let i = 0; i < STREAK_TO_MASTER; i++) out += i < s ? "●" : "○";
@@ -2353,11 +3913,11 @@ function wordStatus(key){ // flashcard chip
   const st = itemState(statsCache, key);
   if(st === "new") return null;
   if(st === "mastered") return {label:"★ mastered", cls:"status-mastered"};
-  if(st === "wrong") return {label:"needs practice ○○○", cls:"status-practice"};
-  return {label: dots(statsCache[key].s) + " " + statsCache[key].s + " of 3 in a row", cls:"status-learning"};
+  if(st === "wrong") return {label:"to fix ○○○", cls:"status-practice"};
+  return {label: dots(statsCache[key].s) + " " + STATE_WORDS[st] + " (" + statsCache[key].s + " of 3 in a row)", cls: st === "nearly" ? "status-nearly" : "status-way"};
 }
 function summarise(items, stats){
-  const sum = {total: items.length, mastered: 0, learning: 0, wrong: 0, fresh: 0, points: 0};
+  const sum = {total: items.length, mastered: 0, nearly: 0, way: 0, wrong: 0, fresh: 0, points: 0};
   items.forEach(it=>{
     const st = itemState(stats, it.key);
     if(st === "new") sum.fresh++; else sum[st]++;
@@ -2369,13 +3929,32 @@ function summarise(items, stats){
 function stackedBar(sum, onCard){
   const seg = (n, c) => n ? '<span class="seg ' + c + '" style="width:' + (100 * n / sum.total) + '%"></span>' : '';
   return '<div class="mbar' + (onCard ? ' on-card' : '') + '">' +
-    seg(sum.mastered, "m") + seg(sum.learning, "l") + seg(sum.wrong, "w") + seg(sum.fresh, "f") + '</div>';
+    seg(sum.mastered, "m") + seg(sum.nearly, "n") + seg(sum.way, "o") + seg(sum.wrong, "w") + seg(sum.fresh, "f") + '</div>';
 }
 function legend(sum, onCard){
   const part = (n, c, label) => n ? '<span><span class="k ' + c + '"></span>' + n + ' ' + label + '</span>' : '';
   return '<div class="mlegend' + (onCard ? ' on-card-legend' : '') + '">' +
-    part(sum.mastered, "m", "mastered") + part(sum.learning, "l", "on the way") +
+    part(sum.mastered, "m", "mastered") + part(sum.nearly, "n", "nearly there") + part(sum.way, "o", "on the way") +
     part(sum.wrong, "w", "to fix") + part(sum.fresh, "f", "not tried yet") + '</div>';
+}
+
+// Latin -> English: which words he's translated right inside sentences
+// ({key: {r: times right, w: times wrong, last: "r"|"w", t: round}})
+function readingKey(subjectKey, week){ return statsStorageKey(subjectKey, week.id) + ":reading"; }
+function readReading(subjectKey, week){
+  try { const v = JSON.parse(localStorage.getItem(readingKey(subjectKey, week)) || "null"); if(v && v.words) return v; } catch(e){}
+  return {round: 0, words: {}};
+}
+function saveReading(v){ try { localStorage.setItem(readingKey(currentSubjectKey, currentWeek), JSON.stringify(v)); } catch(e){} }
+function readingSummary(cfg, cov){
+  let right = 0, wrong = 0;
+  cfg.coverKeys.forEach(k => { const r = cov.words[k]; if(!r) return; if(r.last === "r") right++; else wrong++; });
+  const total = cfg.coverKeys.length;
+  return {right, wrong, fresh: total - right - wrong, total, pct: total ? Math.round(100 * right / total) : 0};
+}
+function readingBar(rs, onCard){
+  const seg = (n, c) => n ? '<span class="seg ' + c + '" style="width:' + (100 * n / rs.total) + '%"></span>' : '';
+  return '<div class="mbar' + (onCard ? ' on-card' : '') + '">' + seg(rs.right, "m") + seg(rs.wrong, "w") + seg(rs.fresh, "f") + '</div>';
 }
 
 // English -> Latin sentence rounds: "mastered" after 3 strong rounds (90%+) in a row
@@ -2398,12 +3977,16 @@ function setProgress(subjectKey, week){
   const stats = readStats(subjectKey, week);
   const sum = summarise(week.items, stats);
   let done = sum.total > 0 && sum.mastered === sum.total;
-  let sentence = null;
+  let sentence = null, reading = null;
   if(week.builder){
     sentence = readSentenceStreak(subjectKey, week);
     done = done && sentence.streak >= SENTENCE_ROUNDS_TO_MASTER;
   }
-  return {sum, sentence, done};
+  if(week.reading){
+    reading = readingSummary(week.reading, readReading(subjectKey, week));
+    if(week.reading.gates) done = done && reading.right === reading.total;
+  }
+  return {sum, sentence, reading, done};
 }
 
 function loadStats(subjectKey, week){
@@ -2418,7 +4001,7 @@ function loadStats(subjectKey, week){
 
 function recordResult(item, correct){
   const prev = statsCache[item.key] || {s: 0, n: 0};
-  statsCache[item.key] = { s: correct ? Math.min(prev.s + 1, STREAK_TO_MASTER) : 0, n: prev.n + 1 };
+  statsCache[item.key] = { s: correct ? Math.min(prev.s + 1, STREAK_TO_MASTER) : 0, n: prev.n + 1, t: Date.now() };
   saveStats();
   refreshStatsUI();
 }
@@ -2437,8 +4020,18 @@ function refreshStatsUI(){
     const ss = readSentenceStreak(currentSubjectKey, currentWeek);
     const sDone = ss.streak >= SENTENCE_ROUNDS_TO_MASTER;
     done = done && sDone;
-    sentenceLine = '<div class="mastery-extra">Sentences: <span class="dots">' + sentenceDots(ss.streak) + '</span> ' +
+    sentenceLine = '<div class="mastery-extra">English → Latin: <span class="dots">' + sentenceDots(ss.streak) + '</span> ' +
       (sDone ? "★ mastered" : ss.streak + " of 3 strong rounds in a row (90%+)") + '</div>';
+  }
+  if(currentWeek.reading){
+    const cfg = currentWeek.reading;
+    const rs = readingSummary(cfg, readReading(currentSubjectKey, currentWeek));
+    const rDone = rs.right === rs.total;
+    if(cfg.gates) done = done && rDone;
+    const u = cfg.coverage === "forms" ? "forms" : "words";
+    sentenceLine += '<div class="mastery-extra">Latin → English: ' + (rDone ? "★ every " + u.slice(0, -1) + " translated right" :
+      '<b>' + rs.right + ' / ' + rs.total + '</b> ' + u + ' translated right (' + rs.pct + '%)') + '</div>' +
+      '<div style="margin-top:5px">' + readingBar(rs, false) + '</div>';
   }
   const head = done
     ? '<b>★ All mastered!</b><span class="rule">Keep it fresh with a practice round now and then</span>'
@@ -2450,17 +4043,27 @@ function refreshStatsUI(){
   renderFlashStatus();
 }
 
-// What a practice round will contain: the words not mastered yet (ones he
-// got wrong first, then ones on the way, then new ones), plus a quick check
-// of 2 mastered words. Never more than ROUND_SIZE; shorter when little is left.
+// What a practice round will contain. All the vocab is mixed in together:
+// up to 4 he got wrong last time, then about half new words and half words
+// on the way (the ones asked longest ago first), plus a quick check of 2
+// mastered words. Never more than ROUND_SIZE; shorter when little is left.
 function buildPracticeRound(pool){
-  const by = {wrong: [], learning: [], new: [], mastered: []};
+  const by = {wrong: [], way: [], nearly: [], new: [], mastered: []};
   pool.forEach(it => by[itemState(statsCache, it.key)].push(it));
-  const todo = shuffle(by.wrong).concat(shuffle(by.learning), shuffle(by.new));
-  if(!todo.length) return shuffle(by.mastered).slice(0, Math.min(6, by.mastered.length)); // all mastered: short review
+  const lastAsked = it => (statsCache[it.key] && statsCache[it.key].t) || 0;
+  const oldestFirst = list => shuffle(list).sort((a, b) => lastAsked(a) - lastAsked(b));
+  const wrong = oldestFirst(by.wrong), learning = oldestFirst(by.way.concat(by.nearly)), fresh = shuffle(by.new);
+  if(!wrong.length && !learning.length && !fresh.length) return shuffle(by.mastered).slice(0, Math.min(6, by.mastered.length)); // all mastered: short review
   const review = Math.min(REVIEW_PER_ROUND, by.mastered.length);
-  const main = todo.slice(0, ROUND_SIZE - review);
-  return shuffle(main.concat(shuffle(by.mastered).slice(0, review)));
+  const slots = ROUND_SIZE - review;
+  const picked = [];
+  const take = (list, k) => { while(k-- > 0 && list.length && picked.length < slots) picked.push(list.shift()); };
+  take(wrong, 4);
+  take(fresh, Math.ceil((slots - picked.length) / 2)); // new words keep coming every round…
+  take(learning, slots - picked.length);                // …alongside the ones he's working on
+  take(fresh, slots - picked.length);
+  take(wrong, slots - picked.length);
+  return shuffle(picked.concat(shuffle(by.mastered).slice(0, review)));
 }
 function updateRoundButtons(){
   if(!currentWeek || !ITEMS.length) return;
@@ -2472,7 +4075,7 @@ function updateRoundButtons(){
   document.getElementById("roundBtn").textContent = (left ? "Practice round (" : "Review round (") + roundLen + ")";
   document.getElementById("fullBtn").textContent = "Full test (all " + pool.length + ")";
   document.getElementById("roundNote").textContent = left
-    ? "Practice round: the " + unit + " you haven't mastered yet" + (mastered ? ", plus a quick check of a couple you have" : "") +
+    ? "Practice round: any " + unit + " to fix first, then a mix of new " + unit + " and ones on the way" + (mastered ? ", plus a quick check of a couple you've mastered" : "") +
       ". Anything you get wrong comes back once later in the round."
     : "Everything here is mastered — a review round checks a few at random. Full test = every " + unit.replace(/s$/, "") + " once, like the real test.";
   document.getElementById("retryPracticeBtn").textContent = left ? "Next practice round (" + roundLen + ")" : "Review round (" + roundLen + ")";
@@ -2516,8 +4119,10 @@ function openSubject(key){
     const sum = prog.sum;
     let progText;
     if(prog.done) progText = "★ All mastered";
-    else if(w.builder) progText = "Tables " + sum.mastered + "/" + sum.total + " mastered · Sentences " + sentenceDots(prog.sentence.streak);
-    else progText = sum.mastered + " / " + sum.total + " mastered" + (sum.fresh === sum.total ? " · not started" : "");
+    else if(w.builder) progText = "Tables " + sum.mastered + "/" + sum.total + " · E→L " + sentenceDots(prog.sentence.streak) +
+      (prog.reading ? " · L→E " + prog.reading.pct + "%" : "");
+    else progText = sum.mastered + " / " + sum.total + " mastered" + (sum.fresh === sum.total ? " · not started" : "") +
+      (prog.reading && (prog.reading.right + prog.reading.wrong) ? " · L→E " + prog.reading.pct + "%" : "");
     const btn = document.createElement("button");
     btn.className = "board-card" + (prog.done ? " done" : "");
     btn.innerHTML = '<span class="emoji">' + s.emoji + '</span>' +
@@ -2565,6 +4170,14 @@ function openWeek(week){
   const hasBuilder = !!week.builder;
   document.getElementById("tabBuilder").classList.toggle("hidden", !hasBuilder);
   document.getElementById("tabBonus").classList.toggle("hidden", !hasBuilder);
+  // Latin -> English (typed) replaces the old multiple-choice Translate.
+  // It sits next to English -> Latin where there is one, otherwise where Translate was.
+  const tabReading = document.getElementById("tabReading");
+  tabReading.classList.toggle("hidden", !week.reading);
+  if(week.reading){
+    document.getElementById("tabTranslate").classList.add("hidden");
+    tabReading.parentNode.insertBefore(tabReading, document.getElementById(hasBuilder ? "tabBonus" : "tabTranslate"));
+  }
   const labels = week.tabLabels || {};
   document.querySelector('.tab-btn[data-tab="flash"]').textContent = labels.flash || "Flashcards";
   document.querySelector('.tab-btn[data-tab="quiz"]').textContent = labels.quiz || "Quiz";
@@ -2624,6 +4237,7 @@ function openWeek(week){
   showScreen("screen-main");
   renderFlash();
   loadStats(currentSubjectKey, week);
+  if(week.reading) renderReadingIntro();
 }
 
 function setSelected(rowId, val){
@@ -2641,6 +4255,7 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
     btn.classList.add("active");
     document.getElementById("panel-"+btn.dataset.tab).classList.add("active");
     if(btn.dataset.tab === "builder") setBuilderMode(btn.dataset.mode || "normal");
+    if(btn.dataset.tab === "reading" && !document.getElementById("readingIntro").classList.contains("hidden")) renderReadingIntro();
   });
 });
 
@@ -2740,7 +4355,7 @@ document.getElementById("restartAllBtn").addEventListener("click", ()=>{
 // ================= NEXT-BUTTON PACING (all modes) =================
 // Correct answers move on automatically. Wrong answers leave the correct
 // answer on screen until he taps Next (or presses Enter on a keyboard).
-const NEXT_BTN_IDS = ["nextBtn","translateNextBtn","identifyNextBtn","endingsNextBtn","verbformsNextBtn","builderNextBtn"];
+const NEXT_BTN_IDS = ["nextBtn","translateNextBtn","identifyNextBtn","endingsNextBtn","verbformsNextBtn","builderNextBtn","readingNextBtn"];
 function waitForNext(btnId, fn){
   const btn = document.getElementById(btnId);
   btn.classList.remove("hidden");
@@ -2846,7 +4461,8 @@ function renderQuestion(){
   const streakEl = document.getElementById("promptStreak");
   streakEl.innerHTML = stNow === "new" ? "New word" :
     stNow === "mastered" ? "★ Mastered — quick check" :
-    'This one: <span class="dots">' + dots(statsCache[item.key].s) + '</span> ' + statsCache[item.key].s + ' of 3 in a row';
+    stNow === "wrong" ? 'This one: <span class="dots">○○○</span> to fix' :
+    'This one: ' + dotsHTML(statsCache[item.key].s) + ' ' + STATE_WORDS[stNow] + ' (' + statsCache[item.key].s + ' of 3 in a row)';
   document.getElementById("quizScore").textContent = "Score: " + quizScore;
   document.getElementById("progressFill").style.width = (100*quizIdx/quizQueue.length) + "%";
   document.getElementById("feedback").textContent = "";
@@ -2948,10 +4564,10 @@ function registerAnswer(isCorrect, item){
     } else if(r.s >= STREAK_TO_MASTER){
       feedback.textContent = "Correct! ★ Still mastered";
     } else {
-      feedback.textContent = "Correct! " + dots(r.s) + " " + r.s + " of 3 in a row";
+      feedback.textContent = "Correct! " + dots(r.s) + " " + (r.s >= 2 ? "nearly there" : "on the way") + " (" + r.s + " of 3 in a row)";
     }
     feedback.className = "feedback good";
-    streakEl.innerHTML = r.s >= STREAK_TO_MASTER ? "★ Mastered" : 'This one: <span class="dots">' + dots(r.s) + '</span> ' + r.s + ' of 3 in a row';
+    streakEl.innerHTML = r.s >= STREAK_TO_MASTER ? "★ Mastered" : 'This one: ' + dotsHTML(r.s) + ' ' + (r.s >= 2 ? "nearly there" : "on the way") + ' (' + r.s + ' of 3 in a row)';
   } else {
     quizMissed.push(item);
     // In a practice round a missed word comes back once, a few questions later
@@ -2963,7 +4579,7 @@ function registerAnswer(isCorrect, item){
     }
     if(feedback.className.indexOf("bad") >= 0 && feedback.textContent) feedback.textContent += " · " + note;
     else { feedback.textContent = note; feedback.className = "feedback bad"; }
-    streakEl.innerHTML = 'This one: <span class="dots">○○○</span> 0 of 3 in a row';
+    streakEl.innerHTML = 'This one: <span class="dots">○○○</span> to fix';
   }
   document.getElementById("quizScore").textContent = "Score: " + quizScore;
   const advance = ()=>{
@@ -3054,7 +4670,7 @@ const DEGREE_MEANINGS = {
 
 function resetSentencePanels(){
   cancelPendingNext();
-  ["translate","identify","endings","verbforms","builder"].forEach(name=>{
+  ["translate","identify","endings","verbforms","builder","reading"].forEach(name=>{
     document.getElementById(name+"Intro").classList.remove("hidden");
     document.getElementById(name+"Play").classList.add("hidden");
     document.getElementById(name+"Results").classList.add("hidden");
@@ -3462,6 +5078,183 @@ function finishVerbforms(){
     pct >= 80 ? "Great job — almost there!" :
     pct >= 50 ? "Good start — keep practicing." :
     "Keep going, it'll click with practice.";
+}
+
+
+// --- Latin -> English: read the Latin, type the English, marked word by word ---
+let rdQueue = [], rdIdx = 0, rdRight = 0, rdChecked = false, rdCurrent = null, rdLast = null;
+let rdWordsRight = 0, rdWordsTotal = 0, rdStartRight = 0, rdOverridden = false;
+function rdEsc(x){ return String(x).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function readingCovHTML(cfg, cov){
+  const rs = readingSummary(cfg, cov);
+  const u = cfg.coverage === "forms" ? "forms" : "words";
+  const head = rs.right === rs.total
+    ? '<b>★ Every ' + u.slice(0, -1) + ' translated right!</b><span class="rule">Keep it fresh with a round now and then</span>'
+    : '<span><b>' + rs.right + ' / ' + rs.total + '</b> ' + u + ' translated right (' + rs.pct + '%)</span><span class="rule">' +
+      (cfg.coverage === "forms" ? "every form in the tables" : "every word on your 4 vocab lists") + '</span>';
+  const part = (n, c, label) => n ? '<span><span class="k ' + c + '"></span>' + n + ' ' + label + '</span>' : '';
+  const legendHTML = '<div class="mlegend">' + part(rs.right, "m", "right") + part(rs.wrong, "w", "to try again") + part(rs.fresh, "f", "not tested yet") + '</div>';
+  const chips = test => cfg.coverList.filter(x => test(cov.words[x.key])).map(x =>
+    '<span class="rd-chip ' + (cov.words[x.key] ? (cov.words[x.key].last === "r" ? "r" : "w") : "") + '" title="' + rdEsc(x.english) + '">' +
+    rdEsc(x.latin) + (cfg.coverage === "forms" ? "" : ' <span style="font-weight:600;opacity:.75">' + rdEsc(x.english.split(",")[0]) + '</span>') + '</span>').join("");
+  let list = "";
+  const wr = chips(r => r && r.last === "w"), nt = chips(r => !r), ok = chips(r => r && r.last === "r");
+  if(wr) list += '<div class="rd-group">To try again (they come up next round)</div>' + wr;
+  if(nt) list += '<div class="rd-group">Not tested yet</div>' + nt;
+  if(ok) list += '<div class="rd-group">Translated right</div>' + ok;
+  return '<div class="rd-cov-head">' + head + '</div>' + readingBar(rs, true) + legendHTML +
+    '<details><summary>Show the ' + u + '</summary>' + list + '</details>';
+}
+function renderReadingIntro(){
+  const cfg = currentWeek && currentWeek.reading;
+  if(!cfg) return;
+  document.getElementById("readingCov").innerHTML = readingCovHTML(cfg, readReading(currentSubjectKey, currentWeek));
+  document.getElementById("startReadingBtn").textContent = "Start (" + cfg.roundSize + " sentences)";
+}
+document.getElementById("startReadingBtn").addEventListener("click", startReading);
+document.getElementById("readingAgainBtn").addEventListener("click", startReading);
+document.getElementById("readingCheck").addEventListener("click", checkReading);
+document.getElementById("readingOverride").addEventListener("click", overrideReading);
+document.getElementById("readingInput").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); e.stopPropagation(); checkReading(); }
+});
+function startReading(){
+  const cfg = currentWeek.reading;
+  const cov = readReading(currentSubjectKey, currentWeek);
+  rdStartRight = readingSummary(cfg, cov).right;
+  rdQueue = rdMakeRound(cfg, cov, cfg.roundSize);
+  if(!rdQueue.length) return;
+  cov.round = (cov.round || 0) + 1;
+  saveReading(cov);
+  rdIdx = 0; rdRight = 0; rdWordsRight = 0; rdWordsTotal = 0;
+  document.getElementById("readingIntro").classList.add("hidden");
+  document.getElementById("readingResults").classList.add("hidden");
+  document.getElementById("readingPlay").classList.remove("hidden");
+  renderReadingQ();
+}
+function renderReadingQ(){
+  rdChecked = false; rdOverridden = false;
+  rdCurrent = rdQueue[rdIdx];
+  document.getElementById("readingCounter").textContent = "Sentence " + (rdIdx + 1) + " / " + rdQueue.length;
+  document.getElementById("readingScore").textContent = "Score: " + rdRight;
+  document.getElementById("readingProgressFill").style.width = (100 * rdIdx / rdQueue.length) + "%";
+  document.getElementById("readingLatin").textContent = rdCurrent.latin;
+  const input = document.getElementById("readingInput");
+  input.value = ""; input.className = ""; input.disabled = false;
+  document.getElementById("readingCheck").classList.remove("hidden");
+  document.getElementById("readingOverride").classList.add("hidden");
+  document.getElementById("readingNextBtn").classList.add("hidden");
+  const fb = document.getElementById("readingFeedback");
+  fb.textContent = ""; fb.className = "feedback";
+  const bd = document.getElementById("readingBreakdown");
+  bd.innerHTML = ""; bd.classList.add("hidden");
+}
+// Save how each word went in this sentence
+function rdRecord(S, results, undo){
+  const cov = readReading(currentSubjectKey, currentWeek);
+  Object.keys(results).forEach(k=>{
+    const w = cov.words[k] || {r: 0, w: 0};
+    if(undo && undo[k] === false){ w.w = Math.max(0, w.w - 1); }   // "I think mine was right": replace the wrong mark
+    else if(undo && undo[k] === true){ return; }
+    if(results[k]) w.r++; else w.w++;
+    w.last = results[k] ? "r" : "w";
+    w.t = cov.round || 0;
+    cov.words[k] = w;
+  });
+  saveReading(cov);
+  refreshStatsUI();
+}
+function checkReading(){
+  if(rdChecked) return;
+  const input = document.getElementById("readingInput");
+  const fb = document.getElementById("readingFeedback");
+  if(!input.value.trim()){
+    fb.textContent = "Type the English first.";
+    fb.className = "feedback bad";
+    return;
+  }
+  rdChecked = true;
+  const S = rdCurrent;
+  const chk = rdCheck(S, input.value);
+  rdLast = {S, chk, keys: rdKeyResults(S, chk, false)};
+  rdRecord(S, rdLast.keys);
+  input.disabled = true;
+  input.className = chk.correct ? "correct" : "wrong";
+  document.getElementById("readingCheck").classList.add("hidden");
+  rdWordsRight += chk.okCount; rdWordsTotal += chk.total;
+  if(chk.correct) rdRight++;
+  document.getElementById("readingScore").textContent = "Score: " + rdRight;
+  const bd = document.getElementById("readingBreakdown");
+  if(chk.correct){
+    fb.textContent = "Correct! ✓";
+    fb.className = "feedback good";
+    bd.innerHTML = '<div class="rd-model"><b>Answer:</b> ' + rdEsc(S.english) + '</div>';
+    bd.classList.remove("hidden");
+    setTimeout(advanceReading, 1600);
+    return;
+  }
+  fb.textContent = chk.okCount + " / " + chk.total + " words right";
+  fb.className = "feedback bad";
+  bd.innerHTML = rdBreakdownHTML(S, chk);
+  bd.classList.remove("hidden");
+  // only offered when the answer was close (see rdCheck) — not when it's way off
+  document.getElementById("readingOverride").classList.toggle("hidden", !chk.allowOverride);
+  waitForNext("readingNextBtn", advanceReading);
+}
+function rdBreakdownHTML(S, chk){
+  let html = '<div class="rd-model"><b>Answer:</b> ' + rdEsc(S.english) + '</div><ul class="rd-rows">';
+  S.rows.forEach((row, i)=>{
+    const r = chk.rows[i];
+    const ok = r.st === "ok";
+    let why = "";
+    if(!ok) why = '<span class="rd-why">' + rdEsc(r.msg || (r.st === "missing" ? "not found in your answer" : "not right")) + '</span>';
+    html += '<li class="' + (ok ? "ok" : "bad") + '"><span class="rd-mark">' + (ok ? "✓" : "✗") + '</span><span>' + row.html + why + '</span></li>';
+  });
+  html += '</ul>';
+  if(chk.leftover.length) html += '<div class="rd-extra">Extra words (not in the Latin): <b>' + rdEsc(chk.leftover.join(" ")) + '</b></div>';
+  return html;
+}
+function overrideReading(){
+  if(!rdLast || rdOverridden) return;
+  rdOverridden = true;
+  const {S, chk, keys} = rdLast;
+  rdRecord(S, rdKeyResults(S, chk, true), keys);
+  rdRight++;
+  rdWordsRight += chk.total - chk.okCount;
+  document.getElementById("readingScore").textContent = "Score: " + rdRight;
+  document.getElementById("readingOverride").classList.add("hidden");
+  const fb = document.getElementById("readingFeedback");
+  fb.textContent = "OK — counted as right ✓";
+  fb.className = "feedback good";
+  document.getElementById("readingInput").className = "correct";
+}
+function advanceReading(){
+  rdIdx++;
+  if(rdIdx >= rdQueue.length) finishReading();
+  else { renderReadingQ(); document.getElementById("readingPlay").scrollIntoView({block:"start"}); }
+}
+function finishReading(){
+  cancelPendingNext();
+  const cfg = currentWeek.reading;
+  const cov = readReading(currentSubjectKey, currentWeek);
+  const rs = readingSummary(cfg, cov);
+  document.getElementById("readingPlay").classList.add("hidden");
+  document.getElementById("readingResults").classList.remove("hidden");
+  document.getElementById("readingProgressFill").style.width = "100%";
+  document.getElementById("readingResultScore").textContent = rdRight + " / " + rdQueue.length;
+  const pct = rdWordsTotal ? Math.round(100 * rdWordsRight / rdWordsTotal) : 0;
+  document.getElementById("readingResultMsg").textContent =
+    rdRight === rdQueue.length ? "Every sentence right! \u{1F31F}" :
+    pct >= 80 ? "Great job — nearly every word right." :
+    pct >= 50 ? "Good work — the ones you missed come back next round." :
+    "Keep going — the words you missed come back next round.";
+  const gained = rs.right - rdStartRight;
+  const u = cfg.coverage === "forms" ? "form" : "word";
+  document.getElementById("readingResultDetail").textContent = rdWordsRight + " / " + rdWordsTotal + " words right" +
+    (gained > 0 ? " · ★ " + gained + " more " + u + (gained > 1 ? "s" : "") + " translated right" : "");
+  document.getElementById("readingResultCov").innerHTML = readingCovHTML(cfg, cov);
+  document.getElementById("readingAgainBtn").textContent = "Next round (" + cfg.roundSize + " sentences)";
+  refreshStatsUI();
 }
 
 // --- Sentence builder: identify every word, then write the Latin ---

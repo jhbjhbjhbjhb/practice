@@ -523,6 +523,35 @@
   .sb-breakdown ul { margin: 4px 0 0; padding-left: 18px; }
   #builderInput.correct { border-color: var(--good); background: var(--good-bg); }
   #builderInput.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  /* --- Mastery progress --- */
+  .mastery-panel { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; padding: 10px 12px 9px; margin: 0 0 14px; }
+  .mastery-panel.done { background: rgba(63,157,99,0.28); border-color: #5fc287; }
+  .mastery-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 0.92rem; margin-bottom: 7px; }
+  .mastery-head b { font-size: 1.05rem; }
+  .mastery-head .rule { font-size: 0.72rem; color: var(--chalk-faint); text-align: right; }
+  .mbar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.12); }
+  .mbar .seg { height: 100%; }
+  .mbar .seg.m { background: #3f9d63; }
+  .mbar .seg.l { background: var(--gold); }
+  .mbar .seg.w { background: var(--bad); }
+  .mbar .seg.f { background: rgba(255,255,255,0.16); }
+  .mbar.on-card { background: #e6dfcc; height: 8px; }
+  .mbar.on-card .seg.f { background: #d9d0bb; }
+  .mlegend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 7px; font-size: 0.76rem; color: var(--chalk-dim); }
+  .mlegend .k { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .k.m { background: #3f9d63; } .k.l { background: var(--gold); } .k.w { background: var(--bad); } .k.f { background: rgba(255,255,255,0.3); }
+  .on-card-legend { color: var(--ink-soft); }
+  .on-card-legend .k.f { background: #d9d0bb; }
+  .mastery-extra { margin-top: 8px; font-size: 0.82rem; color: var(--chalk-dim); }
+  .dots { letter-spacing: 2px; color: var(--gold); }
+  .board-card .prog { display: block; margin-top: 7px; }
+  .board-card .prog-text { display: block; font-size: 0.74rem; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
+  .board-card.done { background: #dff1e5; outline: 3px solid #3f9d63; outline-offset: -3px; }
+  .board-card.done .prog-text { color: #205c37; }
+  .prompt-streak { text-align: center; font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); margin: -4px 0 12px; min-height: 1em; }
+  .prompt-streak .dots { color: #b8860b; }
+  .result-mastery { background: #fffdf8; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin: 4px 0 16px; font-size: 0.86rem; color: var(--ink); }
+  .result-mastery .row { display: flex; justify-content: space-between; margin-bottom: 6px; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -553,7 +582,7 @@
     <button class="backlink" id="backToWeek">&larr; Change subject / week</button>
     <div class="section-title" id="mainTitle">Latin</div>
     <p class="section-sub" id="mainSubtitle">Week 1</p>
-    <div class="progress-chip hidden" id="masteryChip">0 / 0 mastered</div>
+    <div class="mastery-panel hidden" id="masteryPanel"></div>
     <p class="sync-note" id="syncNote"></p>
 
     <div class="tabs">
@@ -603,11 +632,12 @@
           </div>
         </div>
         <div class="field">
-          <label id="setFieldLabel">Words</label>
+          <label>What to do</label>
           <div class="opt-row" id="setRow">
-            <button data-val="all" class="selected">All words</button>
-            <button data-val="practice" id="practiceOnlyBtn" disabled>Needs practice (0)</button>
+            <button data-val="round" class="selected" id="roundBtn">Practice round</button>
+            <button data-val="full" id="fullBtn">Full test</button>
           </div>
+          <p class="dir-note" id="roundNote"></p>
         </div>
         <button class="primary-btn" id="startQuizBtn">Start quiz</button>
       </div>
@@ -622,6 +652,7 @@
           <div class="prompt-label" id="promptLabel">&rarr; English</div>
           <div class="prompt-word" id="promptWord">word</div>
           <div class="prompt-meaning hidden" id="promptMeaning">meaning</div>
+          <div class="prompt-streak" id="promptStreak"></div>
           <div id="choicesWrap"></div>
           <div id="typeWrap" class="hidden">
             <div class="type-row">
@@ -642,12 +673,13 @@
           <div class="score-big" id="resultScore">0 / 26</div>
           <div class="score-sub" id="resultMsg">Nice work!</div>
           <div class="score-progress" id="resultProgress"></div>
+          <div id="resultMastery"></div>
           <div id="resultReviewWrap">
             <label style="font-weight:800; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);">Review your misses</label>
             <ul class="review-list" id="reviewList"></ul>
           </div>
-          <button class="primary-btn" id="retryPracticeBtn">Practice words that need it</button>
-          <button class="secondary-btn" id="restartAllBtn">Start over (all words)</button>
+          <button class="primary-btn" id="retryPracticeBtn">Next practice round</button>
+          <button class="secondary-btn" id="restartAllBtn">Full test</button>
         </div>
       </div>
 
@@ -2258,82 +2290,193 @@ function unitPlural(){
   return currentWeek && currentWeek.unit === "form" ? "forms" : "words";
 }
 
-// ================= PERSISTENCE (this browser's localStorage) =================
-// No sign-in required, so this stays a plain public link — progress is
-// remembered on whichever device/browser he plays on, per subject+week.
-let statsCache = {}; // { [item.key]: {c: correctCount, w: wrongCount} }
+// ================= MASTERY (saved in this browser) =================
+// A word/form is MASTERED after 3 right in a row. A wrong answer resets only
+// that one word's streak — never the whole list. Progress is saved after
+// every single answer, so stopping halfway through a round loses nothing.
+const STREAK_TO_MASTER = 3;
+const ROUND_SIZE = 12;          // a practice round is at most this long…
+const REVIEW_PER_ROUND = 2;     // …including a quick check of 2 mastered words
+const SENTENCE_ROUNDS_TO_MASTER = 3, STRONG_ROUND_PCT = 90;
+let statsCache = {}; // { [item.key]: {s: current streak (0-3), n: answers so far} }
+
 function statsStorageKey(subjectKey, weekId){
   return "vocabChalkboard:" + subjectKey + "-" + weekId;
 }
-
-function wordStatus(key){
-  const s = statsCache[key];
-  if(!s || (s.c === 0 && s.w === 0)) return null;
-  if(s.c > s.w) return {label:"mastered", cls:"status-mastered"};   // more right than wrong
-  if(s.c === s.w) return {label:"learning", cls:"status-learning"}; // tied so far
-  return {label:"needs practice", cls:"status-practice"};           // more wrong than right
+// Older saves were {c: rights, w: wrongs}. Carry them over gently: a word
+// that was ahead keeps up to 2 of its 3, so one more right answer confirms it.
+function upgradeRecord(r){
+  if(!r) return null;
+  if(typeof r.s === "number") return r;
+  const c = r.c || 0, w = r.w || 0;
+  return {s: c > w ? Math.min(2, c - w) : 0, n: c + w};
 }
-function countMastered(){
-  return ITEMS.filter(it => (wordStatus(it.key)||{}).label === "mastered").length;
-}
-function itemsNeedingPractice(){
-  return ITEMS.filter(it => (wordStatus(it.key)||{}).label === "needs practice");
-}
-
-function loadStats(subjectKey, week){
-  statsCache = {};
-  const note = document.getElementById("syncNote");
+// Read a set's saved progress (also folding in sets that were merged into it).
+function readStats(subjectKey, week){
+  let words = {};
   try {
     const raw = localStorage.getItem(statsStorageKey(subjectKey, week.id));
-    statsCache = (raw && JSON.parse(raw).words) || {};
-    // Sets that were merged keep the progress from their old versions:
-    // copy any word this set hasn't recorded yet from the old set(s).
+    words = (raw && JSON.parse(raw).words) || {};
     if(week.migrateFrom){
       const keys = new Set(week.items.map(it => it.key));
-      let changed = false;
       week.migrateFrom.forEach(oldId=>{
         const oldRaw = localStorage.getItem(statsStorageKey(subjectKey, oldId));
         const old = (oldRaw && JSON.parse(oldRaw).words) || {};
-        Object.keys(old).forEach(k=>{
-          if(keys.has(k) && !statsCache[k]){ statsCache[k] = old[k]; changed = true; }
-        });
+        Object.keys(old).forEach(k=>{ if(keys.has(k) && !words[k]) words[k] = old[k]; });
       });
-      if(changed) localStorage.setItem(statsStorageKey(subjectKey, week.id), JSON.stringify({ words: statsCache }));
     }
-    note.textContent = "Progress is saved on this device.";
-  } catch(e){
-    note.textContent = "Progress can't be saved on this device right now.";
+  } catch(e){ /* storage unavailable: start empty */ }
+  const out = {};
+  Object.keys(words).forEach(k => { out[k] = upgradeRecord(words[k]); });
+  return out;
+}
+function saveStats(){
+  try {
+    localStorage.setItem(statsStorageKey(currentSubjectKey, currentWeek.id), JSON.stringify({ words: statsCache }));
+  } catch(e){ /* best effort — page still works without saving */ }
+}
+
+// "new" (never tried) · "wrong" (got it wrong last time) · "learning" (1-2 in a row) · "mastered"
+function itemState(stats, key){
+  const r = stats[key];
+  if(!r || !r.n) return "new";
+  if(r.s >= STREAK_TO_MASTER) return "mastered";
+  if(r.s === 0) return "wrong";
+  return "learning";
+}
+function dots(s){
+  let out = "";
+  for(let i = 0; i < STREAK_TO_MASTER; i++) out += i < s ? "●" : "○";
+  return out;
+}
+function wordStatus(key){ // flashcard chip
+  const st = itemState(statsCache, key);
+  if(st === "new") return null;
+  if(st === "mastered") return {label:"★ mastered", cls:"status-mastered"};
+  if(st === "wrong") return {label:"needs practice ○○○", cls:"status-practice"};
+  return {label: dots(statsCache[key].s) + " " + statsCache[key].s + " of 3 in a row", cls:"status-learning"};
+}
+function summarise(items, stats){
+  const sum = {total: items.length, mastered: 0, learning: 0, wrong: 0, fresh: 0, points: 0};
+  items.forEach(it=>{
+    const st = itemState(stats, it.key);
+    if(st === "new") sum.fresh++; else sum[st]++;
+    sum.points += Math.min(STREAK_TO_MASTER, (stats[it.key] || {}).s || 0);
+  });
+  sum.pct = sum.total ? Math.round(100 * sum.points / (sum.total * STREAK_TO_MASTER)) : 0;
+  return sum;
+}
+function stackedBar(sum, onCard){
+  const seg = (n, c) => n ? '<span class="seg ' + c + '" style="width:' + (100 * n / sum.total) + '%"></span>' : '';
+  return '<div class="mbar' + (onCard ? ' on-card' : '') + '">' +
+    seg(sum.mastered, "m") + seg(sum.learning, "l") + seg(sum.wrong, "w") + seg(sum.fresh, "f") + '</div>';
+}
+function legend(sum, onCard){
+  const part = (n, c, label) => n ? '<span><span class="k ' + c + '"></span>' + n + ' ' + label + '</span>' : '';
+  return '<div class="mlegend' + (onCard ? ' on-card-legend' : '') + '">' +
+    part(sum.mastered, "m", "mastered") + part(sum.learning, "l", "on the way") +
+    part(sum.wrong, "w", "to fix") + part(sum.fresh, "f", "not tried yet") + '</div>';
+}
+
+// English -> Latin sentence rounds: "mastered" after 3 strong rounds (90%+) in a row
+function sentenceKey(subjectKey, week){ return statsStorageKey(subjectKey, week.id) + ":sentences"; }
+function readSentenceStreak(subjectKey, week){
+  try { return JSON.parse(localStorage.getItem(sentenceKey(subjectKey, week)) || "null") || {streak: 0, rounds: 0}; }
+  catch(e){ return {streak: 0, rounds: 0}; }
+}
+function saveSentenceStreak(v){
+  try { localStorage.setItem(sentenceKey(currentSubjectKey, currentWeek), JSON.stringify(v)); } catch(e){}
+}
+function sentenceDots(n){
+  let out = "";
+  for(let i = 0; i < SENTENCE_ROUNDS_TO_MASTER; i++) out += i < n ? "●" : "○";
+  return out;
+}
+
+// Whole-set progress, used by the week list and the subject list
+function setProgress(subjectKey, week){
+  const stats = readStats(subjectKey, week);
+  const sum = summarise(week.items, stats);
+  let done = sum.total > 0 && sum.mastered === sum.total;
+  let sentence = null;
+  if(week.builder){
+    sentence = readSentenceStreak(subjectKey, week);
+    done = done && sentence.streak >= SENTENCE_ROUNDS_TO_MASTER;
   }
+  return {sum, sentence, done};
+}
+
+function loadStats(subjectKey, week){
+  statsCache = readStats(subjectKey, week);
+  const note = document.getElementById("syncNote");
+  let ok = true;
+  try { localStorage.setItem("vocabChalkboard:probe", "1"); } catch(e){ ok = false; }
+  note.textContent = ok ? "Progress is saved on this device after every answer." : "Progress can't be saved on this device right now.";
+  if(ok && Object.keys(statsCache).length) saveStats(); // stores any carried-over progress in the new format
   refreshStatsUI();
 }
 
 function recordResult(item, correct){
-  const key = item.key;
-  const prev = statsCache[key] || {c:0, w:0};
-  const next = { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1) };
-  statsCache[key] = next;
+  const prev = statsCache[item.key] || {s: 0, n: 0};
+  statsCache[item.key] = { s: correct ? Math.min(prev.s + 1, STREAK_TO_MASTER) : 0, n: prev.n + 1 };
+  saveStats();
   refreshStatsUI();
-  try {
-    localStorage.setItem(
-      statsStorageKey(currentSubjectKey, currentWeek.id),
-      JSON.stringify({ words: statsCache })
-    );
-  } catch(e){ /* best effort — page still works without saving */ }
 }
 
+// The progress panel at the top of a set
 function refreshStatsUI(){
-  if(!ITEMS.length) return;
-  const mastered = countMastered();
-  const chip = document.getElementById("masteryChip");
-  chip.textContent = mastered + " / " + ITEMS.length + " mastered";
-  chip.classList.toggle("hidden", Object.keys(statsCache).length === 0 && mastered === 0);
-
-  const practiceBtn = document.getElementById("practiceOnlyBtn");
-  const n = itemsNeedingPractice().length;
-  practiceBtn.textContent = "Needs practice (" + n + ")";
-  practiceBtn.disabled = n === 0;
-
+  const panel = document.getElementById("masteryPanel");
+  if(!currentWeek || !ITEMS.length){ panel.classList.add("hidden"); return; }
+  const sum = summarise(ITEMS, statsCache);
+  const unit = unitPlural();
+  const isTables = !!currentWeek.builder;
+  const what = isTables ? "table " + unit : unit;
+  let sentenceLine = "";
+  let done = sum.mastered === sum.total;
+  if(currentWeek.builder){
+    const ss = readSentenceStreak(currentSubjectKey, currentWeek);
+    const sDone = ss.streak >= SENTENCE_ROUNDS_TO_MASTER;
+    done = done && sDone;
+    sentenceLine = '<div class="mastery-extra">Sentences: <span class="dots">' + sentenceDots(ss.streak) + '</span> ' +
+      (sDone ? "★ mastered" : ss.streak + " of 3 strong rounds in a row (90%+)") + '</div>';
+  }
+  const head = done
+    ? '<b>★ All mastered!</b><span class="rule">Keep it fresh with a practice round now and then</span>'
+    : '<span><b>' + sum.mastered + ' / ' + sum.total + '</b> ' + what + ' mastered</span><span class="rule">3 right in a row = mastered</span>';
+  panel.innerHTML = '<div class="mastery-head">' + head + '</div>' + stackedBar(sum, false) + legend(sum, false) + sentenceLine;
+  panel.classList.toggle("done", done);
+  panel.classList.remove("hidden");
+  updateRoundButtons();
   renderFlashStatus();
+}
+
+// What a practice round will contain: the words not mastered yet (ones he
+// got wrong first, then ones on the way, then new ones), plus a quick check
+// of 2 mastered words. Never more than ROUND_SIZE; shorter when little is left.
+function buildPracticeRound(pool){
+  const by = {wrong: [], learning: [], new: [], mastered: []};
+  pool.forEach(it => by[itemState(statsCache, it.key)].push(it));
+  const todo = shuffle(by.wrong).concat(shuffle(by.learning), shuffle(by.new));
+  if(!todo.length) return shuffle(by.mastered).slice(0, Math.min(6, by.mastered.length)); // all mastered: short review
+  const review = Math.min(REVIEW_PER_ROUND, by.mastered.length);
+  const main = todo.slice(0, ROUND_SIZE - review);
+  return shuffle(main.concat(shuffle(by.mastered).slice(0, review)));
+}
+function updateRoundButtons(){
+  if(!currentWeek || !ITEMS.length) return;
+  const pool = eligibleForDirection(ITEMS);
+  const left = pool.filter(it => itemState(statsCache, it.key) !== "mastered").length;
+  const mastered = pool.length - left;
+  const roundLen = left ? Math.min(ROUND_SIZE, left + Math.min(REVIEW_PER_ROUND, mastered)) : Math.min(6, mastered);
+  const unit = unitPlural();
+  document.getElementById("roundBtn").textContent = (left ? "Practice round (" : "Review round (") + roundLen + ")";
+  document.getElementById("fullBtn").textContent = "Full test (all " + pool.length + ")";
+  document.getElementById("roundNote").textContent = left
+    ? "Practice round: the " + unit + " you haven't mastered yet" + (mastered ? ", plus a quick check of a couple you have" : "") +
+      ". Anything you get wrong comes back once later in the round."
+    : "Everything here is mastered — a review round checks a few at random. Full test = every " + unit.replace(/s$/, "") + " once, like the real test.";
+  document.getElementById("retryPracticeBtn").textContent = left ? "Next practice round (" + roundLen + ")" : "Review round (" + roundLen + ")";
+  document.getElementById("restartAllBtn").textContent = "Full test (all " + pool.length + ")";
 }
 
 // ================= SCREEN NAV =================
@@ -2344,17 +2487,23 @@ function showScreen(id){
 
 // --- Subject picker ---
 const subjectGrid = document.getElementById("subjectGrid");
-Object.keys(SUBJECTS).forEach(key=>{
-  const s = SUBJECTS[key];
-  const btn = document.createElement("button");
-  btn.className = "board-card";
-  btn.innerHTML = '<span class="emoji">' + s.emoji + '</span>' +
-    '<span class="titles"><span class="t1">' + s.name + '</span>' +
-    '<span class="t2">' + s.weeks.length + ' practice set' + (s.weeks.length>1?"s":"") + '</span></span>' +
-    '<span class="arrow">&rsaquo;</span>';
-  btn.addEventListener("click", ()=> openSubject(key));
-  subjectGrid.appendChild(btn);
-});
+function renderSubjects(){
+  subjectGrid.innerHTML = "";
+  Object.keys(SUBJECTS).forEach(key=>{
+    const s = SUBJECTS[key];
+    const doneCount = s.weeks.filter(w => setProgress(key, w).done).length;
+    const btn = document.createElement("button");
+    btn.className = "board-card" + (doneCount === s.weeks.length ? " done" : "");
+    btn.innerHTML = '<span class="emoji">' + s.emoji + '</span>' +
+      '<span class="titles"><span class="t1">' + s.name + '</span>' +
+      '<span class="t2">' + s.weeks.length + ' practice set' + (s.weeks.length > 1 ? "s" : "") +
+      (doneCount ? ' · ★ ' + doneCount + ' fully mastered' : '') + '</span></span>' +
+      '<span class="arrow">&rsaquo;</span>';
+    btn.addEventListener("click", ()=> openSubject(key));
+    subjectGrid.appendChild(btn);
+  });
+}
+renderSubjects();
 
 function openSubject(key){
   currentSubjectKey = key;
@@ -2363,11 +2512,19 @@ function openSubject(key){
   const weekGrid = document.getElementById("weekGrid");
   weekGrid.innerHTML = "";
   s.weeks.forEach(w=>{
+    const prog = setProgress(key, w);
+    const sum = prog.sum;
+    let progText;
+    if(prog.done) progText = "★ All mastered";
+    else if(w.builder) progText = "Tables " + sum.mastered + "/" + sum.total + " mastered · Sentences " + sentenceDots(prog.sentence.streak);
+    else progText = sum.mastered + " / " + sum.total + " mastered" + (sum.fresh === sum.total ? " · not started" : "");
     const btn = document.createElement("button");
-    btn.className = "board-card";
+    btn.className = "board-card" + (prog.done ? " done" : "");
     btn.innerHTML = '<span class="emoji">' + s.emoji + '</span>' +
       '<span class="titles"><span class="t1">' + w.label + '</span>' +
-      '<span class="t2">' + w.sublabel + '</span></span>' +
+      '<span class="t2">' + w.sublabel + '</span>' +
+      '<span class="prog">' + stackedBar(sum, true) + '</span>' +
+      '<span class="prog-text">' + progText + '</span></span>' +
       '<span class="arrow">&rsaquo;</span>';
     btn.addEventListener("click", ()=> openWeek(w));
     weekGrid.appendChild(btn);
@@ -2375,7 +2532,7 @@ function openSubject(key){
   showScreen("screen-week");
 }
 
-document.getElementById("backToSubject").addEventListener("click", ()=> showScreen("screen-subject"));
+document.getElementById("backToSubject").addEventListener("click", ()=>{ renderSubjects(); showScreen("screen-subject"); });
 document.getElementById("backToWeek").addEventListener("click", ()=> openSubject(currentSubjectKey));
 
 function openWeek(week){
@@ -2384,7 +2541,7 @@ function openWeek(week){
   const s = SUBJECTS[currentSubjectKey];
   document.getElementById("mainTitle").textContent = s.name;
   document.getElementById("mainSubtitle").textContent = week.label + " · " + week.sublabel;
-  document.getElementById("masteryChip").classList.add("hidden");
+  document.getElementById("masteryPanel").classList.add("hidden");
   document.getElementById("syncNote").textContent = "";
 
   // reset flashcards for this item set
@@ -2447,16 +2604,10 @@ function openWeek(week){
     direction = week.directions[0].id;
   }
   mode = s.defaultMode;
-  wordSet = "all";
+  wordSet = "round";
   setSelected("dirRow", direction);
   setSelected("modeRow", mode);
-  setSelected("setRow", "all");
-
-  // unit-aware button copy ("words" vs "forms")
-  const unit = unitPlural();
-  document.getElementById("setFieldLabel").textContent = week.unit === "form" ? "Forms" : "Words";
-  document.getElementById("setRow").children[0].textContent = "All " + unit;
-  document.getElementById("restartAllBtn").textContent = "Start over (all " + unit + ")";
+  setSelected("setRow", "round");
 
   // default tab: Build sentences where it exists, otherwise Flashcards
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
@@ -2561,7 +2712,7 @@ document.getElementById("flashShuffle").addEventListener("click", ()=>{
 // ================= QUIZ SETUP =================
 let direction = "english-foreign";
 let mode = "type";
-let wordSet = "all";
+let wordSet = "round"; // "round" = practice round, "full" = full test
 
 function wireOptRow(rowId, onPick){
   document.getElementById(rowId).addEventListener("click", (e)=>{
@@ -2572,17 +2723,17 @@ function wireOptRow(rowId, onPick){
     onPick(btn.dataset.val);
   });
 }
-wireOptRow("dirRow", v=>direction=v);
+wireOptRow("dirRow", v=>{ direction = v; updateRoundButtons(); });
 wireOptRow("modeRow", v=>mode=v);
 wireOptRow("setRow", v=>wordSet=v);
 
 document.getElementById("startQuizBtn").addEventListener("click", startQuiz);
 document.getElementById("retryPracticeBtn").addEventListener("click", ()=>{
-  wordSet = "practice";
+  wordSet = "round"; setSelected("setRow", "round");
   startQuiz();
 });
 document.getElementById("restartAllBtn").addEventListener("click", ()=>{
-  wordSet = "all";
+  wordSet = "full"; setSelected("setRow", "full");
   startQuiz();
 });
 
@@ -2621,6 +2772,8 @@ let quizQueue = [];
 let quizIdx = 0;
 let quizScore = 0;
 let quizMissed = [];
+let quizRetried = new Set();       // words already given their one "comes back later" retry
+let quizNewlyMastered = new Set(); // words that reached 3-in-a-row during this round
 let currentDirObj = null; // resolved direction object for the current question
 let answered = false;
 
@@ -2632,12 +2785,13 @@ function eligibleForDirection(list){
 }
 
 function startQuiz(){
-  const base = wordSet === "practice" && itemsNeedingPractice().length ? itemsNeedingPractice() : ITEMS;
-  const pool = eligibleForDirection(base);
-  quizQueue = shuffle(pool);
+  const pool = eligibleForDirection(ITEMS);
+  quizQueue = wordSet === "full" ? shuffle(pool) : buildPracticeRound(pool);
   quizIdx = 0;
   quizScore = 0;
   quizMissed = [];
+  quizRetried = new Set();
+  quizNewlyMastered = new Set();
   document.getElementById("quizSetup").classList.add("hidden");
   document.getElementById("quizResults").classList.add("hidden");
   document.getElementById("quizPlay").classList.remove("hidden");
@@ -2686,7 +2840,13 @@ function renderQuestion(){
   const item = quizQueue[quizIdx];
   currentDirObj = resolveDirection(item);
   const dir = currentDirObj;
-  document.getElementById("quizCounter").textContent = "Question " + (quizIdx+1) + " / " + quizQueue.length;
+  document.getElementById("quizCounter").textContent = (wordSet === "full" ? "Full test · " : "") + "Question " + (quizIdx+1) + " / " + quizQueue.length;
+  // this word's progress towards mastery
+  const stNow = itemState(statsCache, item.key);
+  const streakEl = document.getElementById("promptStreak");
+  streakEl.innerHTML = stNow === "new" ? "New word" :
+    stNow === "mastered" ? "★ Mastered — quick check" :
+    'This one: <span class="dots">' + dots(statsCache[item.key].s) + '</span> ' + statsCache[item.key].s + ' of 3 in a row';
   document.getElementById("quizScore").textContent = "Score: " + quizScore;
   document.getElementById("progressFill").style.width = (100*quizIdx/quizQueue.length) + "%";
   document.getElementById("feedback").textContent = "";
@@ -2775,16 +2935,37 @@ function submitTyped(){
 }
 
 function registerAnswer(isCorrect, item){
+  const before = itemState(statsCache, item.key);
+  recordResult(item, isCorrect);
+  const r = statsCache[item.key];
+  const feedback = document.getElementById("feedback");
+  const streakEl = document.getElementById("promptStreak");
   if(isCorrect){
     quizScore++;
-    const feedback = document.getElementById("feedback");
-    feedback.textContent = "Correct!";
+    if(r.s >= STREAK_TO_MASTER && before !== "mastered"){
+      quizNewlyMastered.add(item.key);
+      feedback.textContent = "Correct! ★ Mastered!";
+    } else if(r.s >= STREAK_TO_MASTER){
+      feedback.textContent = "Correct! ★ Still mastered";
+    } else {
+      feedback.textContent = "Correct! " + dots(r.s) + " " + r.s + " of 3 in a row";
+    }
     feedback.className = "feedback good";
+    streakEl.innerHTML = r.s >= STREAK_TO_MASTER ? "★ Mastered" : 'This one: <span class="dots">' + dots(r.s) + '</span> ' + r.s + ' of 3 in a row';
   } else {
     quizMissed.push(item);
+    // In a practice round a missed word comes back once, a few questions later
+    let note = "Back to ○○○ for this one.";
+    if(wordSet !== "full" && !quizRetried.has(item.key)){
+      quizRetried.add(item.key);
+      quizQueue.splice(Math.min(quizIdx + 3, quizQueue.length), 0, item);
+      note = "Back to ○○○ — it'll come back again later in this round.";
+    }
+    if(feedback.className.indexOf("bad") >= 0 && feedback.textContent) feedback.textContent += " · " + note;
+    else { feedback.textContent = note; feedback.className = "feedback bad"; }
+    streakEl.innerHTML = 'This one: <span class="dots">○○○</span> 0 of 3 in a row';
   }
   document.getElementById("quizScore").textContent = "Score: " + quizScore;
-  recordResult(item, isCorrect);
   const advance = ()=>{
     quizIdx++;
     if(quizIdx >= quizQueue.length){
@@ -2806,6 +2987,13 @@ function finishQuiz(){
   document.getElementById("quizResults").classList.remove("hidden");
   document.getElementById("progressFill").style.width = "100%";
   document.getElementById("resultScore").textContent = quizScore + " / " + quizQueue.length;
+  // progress after this round
+  const sum = summarise(ITEMS, statsCache);
+  const nm = quizNewlyMastered.size;
+  document.getElementById("resultMastery").innerHTML = '<div class="result-mastery">' +
+    '<div class="row"><span><b>' + sum.mastered + ' / ' + sum.total + '</b> ' + unitPlural() + ' mastered</span>' +
+    (nm ? '<span>★ ' + nm + ' new this round</span>' : '') + '</div>' +
+    stackedBar(sum, true) + legend(sum, true) + '</div>';
   const pct = Math.round(100*quizScore/quizQueue.length);
   let msg;
   if(pct === 100) msg = "Perfect score! \u{1F31F}";
@@ -2813,7 +3001,7 @@ function finishQuiz(){
   else if(pct >= 50) msg = "Good start — keep practicing.";
   else msg = "Keep going, it'll stick with practice.";
   document.getElementById("resultMsg").textContent = msg;
-  document.getElementById("resultProgress").textContent = countMastered() + " / " + ITEMS.length + " " + unitPlural() + " now mastered overall";
+  document.getElementById("resultProgress").textContent = sum.mastered === sum.total ? "★ Everything in this set is mastered!" : "";
 
   // de-dupe missed items from this run for the review list (shown using
   // the week's canonical direction, same convention as the flashcards)
@@ -2840,10 +3028,7 @@ function finishQuiz(){
     });
   }
 
-  const practiceBtn = document.getElementById("retryPracticeBtn");
-  const n = itemsNeedingPractice().length;
-  practiceBtn.textContent = "Practice " + unitPlural() + " that need it (" + n + ")";
-  practiceBtn.classList.toggle("hidden", n === 0);
+  updateRoundButtons();
 }
 
 // ================= SENTENCE PRACTICE (Translate / Identify) =================
@@ -3505,7 +3690,21 @@ function finishBuilder(){
     pct >= 80 ? "Great job — almost there!" :
     pct >= 50 ? "Good start — keep practicing." :
     "Keep going, it'll click with practice.";
-  document.getElementById("builderResultDetail").textContent = sbPerfect + " of " + sbQueue.length + " sentences completely right";
+  let detail = sbPerfect + " of " + sbQueue.length + " sentences completely right";
+  if(sbMode === "normal"){
+    const ss = readSentenceStreak(currentSubjectKey, currentWeek);
+    const wasDone = ss.streak >= SENTENCE_ROUNDS_TO_MASTER;
+    ss.rounds = (ss.rounds || 0) + 1;
+    ss.streak = pct >= STRONG_ROUND_PCT ? Math.min(SENTENCE_ROUNDS_TO_MASTER, ss.streak + 1) : 0;
+    saveSentenceStreak(ss);
+    detail += " · Strong rounds in a row: " + sentenceDots(ss.streak) +
+      (ss.streak >= SENTENCE_ROUNDS_TO_MASTER ? (wasDone ? " ★ still mastered" : " ★ Sentences mastered!")
+        : pct >= STRONG_ROUND_PCT ? " — " + (SENTENCE_ROUNDS_TO_MASTER - ss.streak) + " more to master" : " (90%+ counts as strong)");
+    refreshStatsUI();
+  } else {
+    detail += " · Bonus rounds are extra practice — they don't affect mastery";
+  }
+  document.getElementById("builderResultDetail").textContent = detail;
 }
 </script>
 </body>

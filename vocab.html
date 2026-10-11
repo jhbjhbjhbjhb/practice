@@ -746,7 +746,7 @@
     <!-- SENTENCE BUILDER (English -> Latin, Section B style) -->
     <div class="panel" id="panel-builder">
       <div class="card" id="builderIntro">
-        <p class="sentence-intro" id="builderIntroText">You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; person and singular/plural for the verb (its tense is shown in brackets). <b>2.</b> Write the whole sentence in Latin with the right endings.</p>
+        <p class="sentence-intro" id="builderIntroText">You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; tense, person and singular/plural for the verb. <b>2.</b> Write the whole sentence in Latin with the right endings.</p>
         <p class="sentence-intro">Only the 1st, 2nd and 3rd declensions, regular verbs, and sum / adsum / absum. New sentences every round.</p>
         <button class="primary-btn" id="startBuilderBtn">Start (10 sentences)</button>
       </div>
@@ -771,7 +771,7 @@
               <input type="text" id="builderInput" placeholder="Type the Latin sentence" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" name="latin-sentence" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" style="width:100%;">
             </form>
           </div>
-          <div class="type-tip">Any word order is fine &mdash; usually the verb goes last.</div>
+          <div class="type-tip">Tenses: “carries” = present · “was carrying” = imperfect · “carried” = perfect. Any word order is fine &mdash; usually the verb goes last.</div>
           <button class="primary-btn" id="builderCheck">Check</button>
           <div class="feedback" id="builderFeedback"></div>
           <div class="sb-breakdown hidden" id="builderBreakdown"></div>
@@ -1792,6 +1792,9 @@ const SB_VERB_ENTRY = {
   sum:"sum = I am", adsum:"adsum = I am present, I am here", absum:"absum = I am absent",
 };
 const SB_PRONOUNS = ["I","You (sg)","He/she","We","You (pl)","They"];
+// English verbs whose present can be read as a past ("lead"/"led", "read"…):
+// only these get a (present)/(perfect) label in the English sentence.
+const SB_AMBIGUOUS_WORDS = new Set(["lead","read","put","cut","set","let","hit","shut","beat","cost","hurt","spread","quit"]);
 
 function sbRand(a){ return a[Math.floor(Math.random()*a.length)]; }
 // Adjectives the builder can use (checklist adjectives with sensible meanings).
@@ -1963,10 +1966,11 @@ function sbMakeSentence(opts){
     if(subj) p = subj.num ? 5 : 2; // numbers above may have changed
 
     // --- English ---
-    // The verb always carries its tense in brackets, just as "you" carries
-    // (sg)/(pl): English can't always show it ("lead" looks like "led", and
-    // "feared" could fairly be imperfect or perfect in Latin).
-    const tag = " (" + tense + ")";
+    // Tenses follow the usual rule: "carries" = present, "was carrying" =
+    // imperfect, "carried" = perfect. A (tense) label is added only where the
+    // English form itself could be misread — e.g. "lead" looks like past "led".
+    const ambiguous = v.en && (v.en[0] === v.en[3] || v.en[0].split(" ").some(w => SB_AMBIGUOUS_WORDS.has(w)));
+    const tag = ambiguous && tense !== "imperfect" ? " (" + tense + ")" : "";
     let verbEn;
     if(v.frame === "be" || v.frame === "beAdj"){
       const be = tense === "present" ? VF_BE_PRESENT[p] : VF_BE_PAST[p];
@@ -3286,6 +3290,7 @@ const SB_FIELDS = {
     {key:"degree", label:"Degree", opts:[["positive","Positive"],["comparative","Comparative"],["superlative","Superlative"]]},
   ],
   verb: [
+    {key:"tense",  label:"Tense", opts:[["present","Present"],["imperfect","Imperfect"],["perfect","Perfect"]]},
     {key:"person", label:"Person", opts:[["1","1st"],["2","2nd"],["3","3rd"]]},
     {key:"num",    label:"Number", opts:[["sg","Singular"],["pl","Plural"]]},
   ],
@@ -3293,7 +3298,7 @@ const SB_FIELDS = {
 let sbQueue = [], sbIdx = 0, sbScore = 0, sbTotal = 0, sbPerfect = 0, sbChecked = false;
 let sbMode = "normal";
 const SB_INTRO = {
-  normal: "You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; person and singular/plural for the verb (its tense is shown in brackets). <b>2.</b> Write the whole sentence in Latin with the right endings.",
+  normal: "You get an English sentence and the Latin words in their dictionary form. <b>1.</b> Identify each word &mdash; case, declension and singular/plural for nouns; tense, person and singular/plural for the verb. <b>2.</b> Write the whole sentence in Latin with the right endings.",
   bonus: "<b>Bonus &mdash; like the test's bonus questions.</b> Only the verb is given. The nouns (and adjectives) are all from your checklist &mdash; the words <b>not</b> in italics &mdash; so you need to know them yourself. Identify each word, then write the Latin.",
 };
 // Switch the shared builder panel between normal and bonus. Only resets

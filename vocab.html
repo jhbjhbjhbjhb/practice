@@ -1648,6 +1648,28 @@ const SUBJECTS = {
           {foreign:"Une fromagerie", english:"a cheese shop", accepted:["a cheese shop","cheese shop"]},
           {foreign:"Une poissonnerie", english:"a fishmongers", accepted:["a fishmongers","fishmongers","a fishmonger's","fishmonger's"]},
         ]
+      },
+      {
+        // Food words. Asked English -> French by default (like every French
+        // set); accents must be right, the article (le / la / un…) is part of the answer.
+        id: "week4-food",
+        label: "Week 4",
+        sublabel: "Food & drink · être gourmand(e)",
+        type: "vocab",
+        words: [
+          {foreign:"Être gourmand(e)", english:"to be a foodie", accepted:["to be a foodie","be a foodie","a foodie","foodie"],
+           foreignAccepted:["être gourmand","être gourmande","être gourmand ou gourmande"]},
+          {foreign:"La confiture de fraises", english:"strawberry jam", accepted:["strawberry jam","the strawberry jam"]},
+          {foreign:"Le poulet rôti", english:"roast chicken", accepted:["roast chicken","the roast chicken","roasted chicken"]},
+          {foreign:"La viande hachée", english:"minced meat", accepted:["minced meat","the minced meat","mince"]},
+          {foreign:"Un sandwich au jambon", english:"a ham sandwich", accepted:["a ham sandwich","ham sandwich"]},
+          {foreign:"Le riz", english:"rice", accepted:["rice","the rice"]},
+          {foreign:"L'eau minérale", english:"still water", accepted:["still water","mineral water","still mineral water","the mineral water"]},
+          {foreign:"Un café allongé", english:"a milky coffee", accepted:["a milky coffee","milky coffee"]},
+          {foreign:"Une pizza", english:"a pizza", accepted:["a pizza","pizza"]},
+          {foreign:"C'est sucré", english:"it's sweet", accepted:["it's sweet","it is sweet","sweet"]},
+          {foreign:"C'est salé", english:"it's salty", accepted:["it's salty","it is salty","salty"]},
+        ]
       }
     ]
   },
@@ -3783,6 +3805,7 @@ function prepareWeek(subject, week){
       lemma: w.lemma || w.foreign,
       english: w.english,
       accepted: w.accepted,
+      foreignAccepted: [w.foreign].concat(w.foreignAccepted || []), // other spellings that also count (e.g. gourmand / gourmande)
       oneWay: !!(week.italics && LATIN_ITALIC.has(w.lemma || w.foreign))
     }));
     week.items = items;
@@ -3806,8 +3829,8 @@ function prepareWeek(subject, week){
         getGroup: () => null,
         getMeaning: () => null,
         getAnswerText: it => it.foreign,
-        isAccepted: (it, raw) => normalize(it.foreign, strictOpts) === normalize(raw, strictOpts),
-        nearMiss: (it, raw) => nearMissHint(subject, [it.foreign], raw)
+        isAccepted: (it, raw) => it.foreignAccepted.some(f => normalize(f, strictOpts) === normalize(raw, strictOpts)),
+        nearMiss: (it, raw) => nearMissHint(subject, it.foreignAccepted, raw)
       }
     ];
   }

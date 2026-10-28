@@ -657,7 +657,7 @@
           <div class="opt-row" id="dirRow"></div>
           <p class="dir-note hidden" id="dirNote"></p>
         </div>
-        <div class="field">
+        <div class="field" id="modeField">
           <label>Answer style</label>
           <div class="opt-row" id="modeRow">
             <button data-val="choice">Multiple choice</button>
@@ -1556,6 +1556,9 @@ const SUBJECTS = {
     defaultDirection: "english-foreign", // English shown, he types/picks the French
     defaultMode: "type",
     strictAccents: true, // typed French answers must have the right accents to count as correct
+    articleHint: "Nearly — the le / la / l' / un / une is part of the answer.",
+    englishToForeignOnly: true, // only ever English -> French…
+    typeOnly: true,             // …typed (no multiple choice)
     accentHint: "Nearly — check the accents (é, è, ê, à, ç…).",
     typeTip: "iPad tip: hold down a letter (e, a, c…) to get é, è, ê, à, ç.",
     weeks: [
@@ -1680,6 +1683,9 @@ const SUBJECTS = {
     defaultMode: "type",
     strictAccents: true, // umlauts and ß must be right
     strictCase: true,    // nouns must have their capital letter (first letter of the sentence is free)
+    articleHint: "Nearly — the der / die / das is part of the answer.",
+    englishToForeignOnly: true, // only ever English -> German…
+    typeOnly: true,             // …typed (no multiple choice)
     accentHint: "Nearly — check the umlauts (ä, ö, ü) and ß.",
     caseHint: "Nearly — German nouns need a capital letter.",
     bothHint: "Nearly — check the umlauts/ß and the capital letters.",
@@ -1718,6 +1724,28 @@ const SUBJECTS = {
           DE("Ich bin mit dem Schiff gefahren.", "I travelled by boat.", ["I traveled by boat","I went by boat","I travelled by ship","I traveled by ship","I went by ship"]),
           DE("Ich bin geflogen.", "I flew."),
           DE("Ich bin zu Fuß gegangen.", "I walked.", ["I went on foot"])
+        )
+      },
+      {
+        // Im Kino — film types (with der / das / die: the gender is part of the
+        // answer) and the two sentences. The plural on the sheet, e.g. (e),
+        // may be typed or left off.
+        id: "2026-10-28",
+        label: "28 October",
+        sublabel: "Im Kino · at the cinema",
+        type: "vocab",
+        words: [
+          {foreign:"der Actionfilm", english:"action film", accepted:["action film","an action film","action movie"], foreignAccepted:["der Actionfilm(e)"]},
+          {foreign:"das Drama", english:"drama", accepted:["drama","a drama"], foreignAccepted:["das Drama (Dramen)"]},
+          {foreign:"der Fantasyfilm", english:"fantasy film", accepted:["fantasy film","a fantasy film","fantasy movie"], foreignAccepted:["der Fantasyfilm(e)"]},
+          {foreign:"der Horrorfilm", english:"horror film", accepted:["horror film","a horror film","horror movie"], foreignAccepted:["der Horrorfilm(e)"]},
+          {foreign:"die Komödie", english:"comedy", accepted:["comedy","a comedy"], foreignAccepted:["die Komödie(n)"]},
+          {foreign:"die Liebeskomödie", english:"romantic comedy, rom-com", accepted:["romantic comedy","rom-com","rom com","romcom","a romantic comedy","a rom-com"], foreignAccepted:["die Liebeskomödie(n)"]},
+          {foreign:"der Science-Fiction-Film", english:"science fiction film", accepted:["science fiction film","science-fiction film","sci-fi film","sci fi film","a science fiction film"], foreignAccepted:["der Science-Fiction-Film(e)"]},
+          {foreign:"der Zeichentrickfilm", english:"cartoon", accepted:["cartoon","a cartoon","animated film"], foreignAccepted:["der Zeichentrickfilm(e)"]},
+        ].concat(
+          DE("Ich bin ins Kino gegangen.", "I went to the cinema.", ["I went to the movies"]),
+          DE("Ich habe zu Hause eine DVD gesehen.", "I watched a DVD at home.", ["I saw a DVD at home"])
         )
       }
     ]
@@ -3746,6 +3774,13 @@ function normalize(s, opts){
 function nearMissHint(subject, targets, raw){
   const sa = !!subject.strictAccents, sc = !!subject.strictCase;
   if(!sa && !sc) return null;
+  // right word but the der / die / das (le / la / un…) left off
+  if(subject.articleHint){
+    for(const t of targets){
+      const bare = t.replace(/^(der|die|das|le|la|les|un|une|des)\s+|^l['’]\s*/i, "");
+      if(bare !== t && normalize(bare) === normalize(raw)) return subject.articleHint;
+    }
+  }
   for(const t of targets){
     if(sc && normalize(t, {keepAccents:sa}) === normalize(raw, {keepAccents:sa})) return subject.caseHint || null;
     if(sa && normalize(t, {keepCase:sc}) === normalize(raw, {keepCase:sc})) return subject.accentHint || null;
@@ -3833,6 +3868,8 @@ function prepareWeek(subject, week){
         nearMiss: (it, raw) => nearMissHint(subject, it.foreignAccepted, raw)
       }
     ];
+    // French & German: only English -> French/German (so flashcards show the English first too)
+    if(subject.englishToForeignOnly) week.directions = week.directions.filter(d => d.id === "english-foreign");
   }
 }
 Object.keys(SUBJECTS).forEach(key=>{
@@ -4239,7 +4276,8 @@ function openWeek(week){
     dirField.classList.add("hidden");
     direction = week.directions[0].id;
   }
-  mode = s.defaultMode;
+  mode = s.typeOnly ? "type" : s.defaultMode;
+  document.getElementById("modeField").classList.toggle("hidden", !!s.typeOnly);
   wordSet = "round";
   setSelected("dirRow", direction);
   setSelected("modeRow", mode);

@@ -1547,6 +1547,82 @@ const SUBJECTS = {
             distractors:["The cleverer thieves took the money.","The very clever thief took the money.","The very clever thieves take the money."],
             parts:[{word:"fures",lemma:"fur",kind:"case",answer:"nominative"},{word:"callidissimi",lemma:"callidus",kind:"degree",answer:"superlative"},{word:"pecuniam",lemma:"pecunia",kind:"case",answer:"accusative"},{word:"ceperunt",lemma:"capio",kind:"tense",answer:"perfect"}] },
         ]
+      },
+
+      // ---------- WEEK 4 ----------
+      // From the vocab sheet, in its four sections. Every word can be asked
+      // both ways (Latin -> English, English -> Latin or Mixed). Verbs are
+      // tested in the present AND the perfect, as in Week 3. Where two Latin
+      // words mean the same (igitur / itaque, deinde / tum) either is accepted.
+      {
+        id: "w4-nouns",
+        label: "Week 4: Nouns",
+        sublabel: "aqua, insula, nauta, mare, tempestas…",
+        type: "vocab",
+        words: [
+          {foreign:"aqua", english:"water", accepted:["water","the water"]},
+          {foreign:"insula", english:"island", accepted:["island","an island","the island"]},
+          {foreign:"nuntius", english:"messenger", accepted:["messenger","a messenger","the messenger"]},
+          {foreign:"nauta", english:"sailor", accepted:["sailor","a sailor","the sailor"]},
+          {foreign:"navis", english:"ship", accepted:["ship","a ship","the ship"]},
+          {foreign:"mare", english:"sea", accepted:["sea","the sea"]},
+          {foreign:"tempestas", english:"storm", accepted:["storm","a storm","the storm"]},
+          {foreign:"princeps", english:"chief, chieftain, prince", accepted:["chief","chieftain","prince","a chief","the chief"]},
+          {foreign:"uxor", english:"wife", accepted:["wife","a wife","the wife"]},
+          {foreign:"maritus", english:"husband", accepted:["husband","a husband","the husband"]},
+        ]
+      },
+      {
+        id: "w4-verbs",
+        label: "Week 4: Verbs",
+        sublabel: "teneo, taceo, venio (advenio, convenio, invenio), constituo, nuntio · present & perfect",
+        type: "vocab",
+        words: [].concat(
+          V("teneo","tenui",["hold"],["held"],["held"]),
+          V("taceo","tacui",["am silent","keep quiet"],["was silent","kept quiet"],["been silent","kept quiet"]),
+          [{foreign:"tacite", english:"quietly, silently", accepted:["quietly","silently"]}],
+          V("venio","veni",["come"],["came"],["come"]),
+          V("advenio","adveni",["arrive"],["arrived"],["arrived"]),
+          V("convenio","conveni",["gather","meet"],["gathered","met"],["gathered","met"]),
+          V("invenio","inveni",["find"],["found"],["found"]),
+          V("constituo","constitui",["decide"],["decided"],["decided"]),
+          V("nuntio","nuntiavi",["announce"],["announced"],["announced"])
+        )
+      },
+      {
+        id: "w4-adjectives",
+        label: "Week 4: Adjectives",
+        sublabel: "miser, ferox, ingens (+ fortis, magnus)",
+        type: "vocab",
+        words: [
+          {foreign:"miser", english:"miserable, wretched", accepted:["miserable","wretched"], foreignAccepted:["miser, misera","miser misera"]},
+          {foreign:"ferox", english:"fierce, ferocious", accepted:["fierce","ferocious"]},
+          {foreign:"fortis", english:"brave", accepted:["brave"]},
+          {foreign:"ingens", english:"huge", accepted:["huge","enormous"]},
+          {foreign:"magnus", english:"big", accepted:["big","great","large"]},
+        ]
+      },
+      {
+        id: "w4-other",
+        label: "Week 4: Other words",
+        sublabel: "deinde, diligenter, numquam, cras, lente, igitur, num, nonne…",
+        type: "vocab",
+        words: [
+          {foreign:"deinde", english:"then, next", accepted:["then","next"], foreignAccepted:["tum"]},
+          {foreign:"tum", english:"then", accepted:["then"], foreignAccepted:["deinde"]},
+          {foreign:"diligenter", english:"carefully", accepted:["carefully"]},
+          {foreign:"diligens", english:"careful", accepted:["careful"]},
+          {foreign:"semper", english:"always", accepted:["always"]},
+          {foreign:"numquam", english:"never", accepted:["never"]},
+          {foreign:"heri", english:"yesterday", accepted:["yesterday"]},
+          {foreign:"cras", english:"tomorrow", accepted:["tomorrow"]},
+          {foreign:"lente", english:"slowly", accepted:["slowly"]},
+          {foreign:"celeriter", english:"quickly", accepted:["quickly"]},
+          {foreign:"igitur", english:"therefore, and so", accepted:["therefore","and so","so"], foreignAccepted:["itaque"]},
+          {foreign:"itaque", english:"therefore, and so", accepted:["therefore","and so","so"], foreignAccepted:["igitur"]},
+          {foreign:"num", english:"surely … not? (expects the answer “no”: num tu es puella? = surely you are not a girl?)", accepted:["surely not","surely ... not","surely … not"]},
+          {foreign:"nonne", english:"surely? (expects the answer “yes”: nonne tu es dea? = surely you are a goddess?)", accepted:["surely"]},
+        ]
       }
     ]
   },
@@ -1766,6 +1842,41 @@ const SUBJECTS = {
           DE("Ich bin ins Kino gegangen.", "I went to the cinema.", ["I went to the movies"]),
           DE("Ich habe zu Hause eine DVD gesehen.", "I watched a DVD at home.", ["I saw a DVD at home"])
         )
+      },
+      {
+        // Bist du süchtig? (how much screen time) + Meinungen (opinions).
+        // The "(un)" / "(nicht)" phrases are split into two, so each can be
+        // asked on its own.
+        id: "2026-11-21",
+        label: "21 November",
+        sublabel: "Bist du süchtig? · Meinungen (opinions)",
+        type: "vocab",
+        words: [
+          {foreign:"eine Stunde pro Tag", english:"an hour a day", accepted:["an hour a day","one hour a day"]},
+          {foreign:"zwei bis drei Stunden pro Tag", english:"two to three hours a day", accepted:["two to three hours a day"]},
+          {foreign:"nicht mehr als drei Stunden pro Tag", english:"no more than three hours a day", accepted:["no more than three hours a day"]},
+          {foreign:"mehr als 20 Stunden pro Woche", english:"more than 20 hours a week", accepted:["more than 20 hours a week","more than twenty hours a week"], foreignAccepted:["mehr als zwanzig Stunden pro Woche"]},
+          {foreign:"nur am Wochenende", english:"only at the weekend", accepted:["only at the weekend","only at weekends"]},
+          {foreign:"nach den Hausaufgaben", english:"after homework", accepted:["after homework","after my homework"]},
+          {foreign:"von 20 bis 22 Uhr", english:"from 8.00 to 10.00 pm", accepted:["from 8 to 10 pm","from 8.00 to 10.00 pm","from 8pm to 10pm"], foreignAccepted:["von zwanzig bis zweiundzwanzig Uhr"]},
+          {foreign:"das finde ich fair", english:"I think that's fair", accepted:["i think that's fair","i think that is fair"]},
+          {foreign:"das finde ich unfair", english:"I think that's unfair", accepted:["i think that's unfair","i think that is unfair"]},
+          {foreign:"das geht mir auf die Nerven", english:"that gets on my nerves", accepted:["that gets on my nerves"]},
+          {foreign:"das ist gesund", english:"that's healthy", accepted:["that's healthy","that is healthy"]},
+          {foreign:"das ist ungesund", english:"that's unhealthy", accepted:["that's unhealthy","that is unhealthy"]},
+          {foreign:"das ist aktiv", english:"that's active", accepted:["that's active","that is active"]},
+          {foreign:"das ist passiv", english:"that's passive", accepted:["that's passive","that is passive"]},
+          {foreign:"das macht fit", english:"that makes you fit", accepted:["that makes you fit"]},
+          {foreign:"das macht unfit", english:"that makes you unfit", accepted:["that makes you unfit"]},
+          {foreign:"das macht Spaß", english:"that's fun", accepted:["that's fun","that is fun"]},
+          {foreign:"das stimmt", english:"that's true", accepted:["that's true","that is true"]},
+          {foreign:"das stimmt nicht", english:"that's not true", accepted:["that's not true","that is not true","that isn't true"]},
+          {foreign:"du hast recht", english:"you're right", accepted:["you're right","you are right"], foreignAccepted:["du hast Recht"]},
+          {foreign:"ich bin süchtig", english:"I'm addicted", accepted:["i'm addicted","i am addicted"]},
+          {foreign:"ich bin nicht süchtig", english:"I'm not addicted", accepted:["i'm not addicted","i am not addicted"]},
+          {foreign:"meiner Meinung nach", english:"in my opinion …", accepted:["in my opinion"]},
+          {foreign:"Unsinn! / Quatsch!", english:"Nonsense!", accepted:["nonsense"], foreignAccepted:["Unsinn!","Quatsch!","Unsinn","Quatsch","Unsinn Quatsch"]},
+        ]
       }
     ]
   }

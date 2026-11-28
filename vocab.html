@@ -1801,7 +1801,7 @@ const SUBJECTS = {
     englishToForeignOnly: true, // only ever English -> German…
     typeOnly: true,             // …typed (no multiple choice)
     accentHint: "Nearly — check the umlauts (ä, ö, ü) and ß.",
-    caseHint: "Nearly — German nouns need a capital letter.",
+    caseHint: "Nearly — check the capital letters: nouns have one, other words don't.",
     bothHint: "Nearly — check the umlauts/ß and the capital letters.",
     typeTip: "iPad tip: hold down a, o or u for ä, ö, ü — and s for ß. Nouns need a capital letter.",
     weeks: [
@@ -1895,6 +1895,34 @@ const SUBJECTS = {
           {foreign:"ich bin nicht süchtig", english:"I'm not addicted", accepted:["i'm not addicted","i am not addicted"]},
           {foreign:"meiner Meinung nach", english:"in my opinion …", accepted:["in my opinion"]},
           {foreign:"Unsinn! / Quatsch!", english:"Nonsense!", accepted:["nonsense"], foreignAccepted:["Unsinn!","Quatsch!","Unsinn","Quatsch","Unsinn Quatsch"]},
+        ]
+      },
+      {
+        // Das Frühstück — breakfast (der / die / das is part of the answer;
+        // umlauts, ß and noun capitals must be right)
+        id: "2026-11-28",
+        label: "28 November",
+        sublabel: "Das Frühstück · breakfast",
+        type: "vocab",
+        words: [
+          {foreign:"der/das Joghurt", english:"yoghurt", accepted:["yoghurt","yogurt"], foreignAccepted:["der Joghurt","das Joghurt"]},
+          {foreign:"der Käse", english:"cheese", accepted:["cheese"]},
+          {foreign:"der Schinken", english:"ham", accepted:["ham"]},
+          {foreign:"der Speck", english:"bacon", accepted:["bacon"]},
+          {foreign:"der Toast", english:"toast", accepted:["toast"]},
+          {foreign:"der Kaffee", english:"coffee", accepted:["coffee"]},
+          {foreign:"der Tee", english:"tea", accepted:["tea"]},
+          {foreign:"der Orangensaft", english:"orange juice", accepted:["orange juice"]},
+          {foreign:"die Butter", english:"butter", accepted:["butter"]},
+          {foreign:"die Marmelade", english:"jam", accepted:["jam"]},
+          {foreign:"die Orangenmarmelade", english:"marmalade", accepted:["marmalade","orange marmalade"]},
+          {foreign:"die Milch", english:"milk", accepted:["milk"]},
+          {foreign:"die heiße Schokolade", english:"hot chocolate", accepted:["hot chocolate"]},
+          {foreign:"das Brötchen", english:"roll", accepted:["roll","bread roll","a roll"]},
+          {foreign:"das Obst", english:"fruit", accepted:["fruit"]},
+          {foreign:"das Ei", english:"egg", accepted:["egg","an egg"]},
+          {foreign:"die Eier", english:"eggs (plural)", accepted:["eggs"], foreignAccepted:["die Eier (pl)"]},
+          {foreign:"die Frühstücksflocken", english:"cereal (plural in German)", accepted:["cereal","cereals","breakfast cereal"], foreignAccepted:["die Frühstücksflocken (pl)"]},
         ]
       }
     ]
